@@ -1,0 +1,11 @@
+# Backend Dependencies
+fastapi
+uvicorn[standard]
+sqlalchemy
+pydantic
+python-jose[cryptography]
+passlib[bcrypt]
+python-multipart
+alembic
+psycopg2-binary
+httpx

@@ -1,0 +1,10 @@
+# AI Engine Dependencies
+openai
+langchain
+langchain-openai
+chromadb
+youtube-transcript-api
+openai-whisper
+tiktoken
+numpy
+pandas
