@@ -1,4 +1,4 @@
-import importlib.util
+import importlib
 import os
 import sys
 from typing import List, Dict, Any
@@ -6,13 +6,10 @@ from typing import List, Dict, Any
 # Dynamic import to handle hyphen in 'semantic-search' folder name
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
-search_engine_path = os.path.join(parent_dir, "semantic-search", "search_engine.py")
+if parent_dir not in sys.path:
+    sys.path.append(parent_dir)
 
-spec = importlib.util.spec_from_file_location("search_engine", search_engine_path)
-search_engine_module = importlib.util.module_from_spec(spec)
-sys.modules["search_engine"] = search_engine_module
-spec.loader.exec_module(search_engine_module)
-
+search_engine_module = importlib.import_module("semantic-search.search_engine")
 SemanticSearchEngine = search_engine_module.SemanticSearchEngine
 
 class BookmarkSearcher:
