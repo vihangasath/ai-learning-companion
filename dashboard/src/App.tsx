@@ -1,4 +1,4 @@
-﻿import { useState } from "react"
+import { useState } from "react"
 import Sidebar from "./components/Sidebar"
 import Topbar from "./components/Topbar"
 import DashboardPage from "./pages/DashboardPage"
@@ -11,6 +11,10 @@ import SearchPage from "./pages/SearchPage"
 import BookmarksPage from "./pages/BookmarksPage"
 import SettingsPage from "./pages/SettingsPage"
 import ProfilePage from "./pages/ProfilePage"
+import MindMapsPage from "./pages/MindMapsPage"
+import FormulaExtractorPage from "./pages/FormulaExtractorPage"
+import ResearchSummarizerPage from "./pages/ResearchSummarizerPage"
+import VoiceAssistantModal from "./components/VoiceAssistantModal"
 
 export type Theme = {
   dark: boolean
@@ -30,6 +34,7 @@ export type Theme = {
 export default function App() {
   const [active, setActive] = useState("Dashboard")
   const [dark, setDark] = useState(true)
+  const [voiceModalOpen, setVoiceModalOpen] = useState(false)
 
   const theme: Theme = dark ? {
     dark: true,
@@ -66,6 +71,9 @@ export default function App() {
     Flashcards: <FlashcardsPage theme={theme} />,
     Quizzes: <QuizzesPage theme={theme} />,
     Recommendations: <RecommendationsPage theme={theme} />,
+    "Mind Maps": <MindMapsPage theme={theme} />,
+    Formulas: <FormulaExtractorPage theme={theme} />,
+    "Research Papers": <ResearchSummarizerPage theme={theme} />,
     Search: <SearchPage theme={theme} />,
     Bookmarks: <BookmarksPage theme={theme} />,
     Settings: <SettingsPage theme={theme} />,
@@ -76,13 +84,20 @@ export default function App() {
     <div style={{ display: "flex", height: "100vh", background: theme.bg, transition: "background 0.2s", fontFamily: "Inter, system-ui, sans-serif" }}>
       <Sidebar active={active} setActive={setActive} theme={theme} />
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", borderLeft: `1px solid ${theme.border}` }}>
-        <Topbar page={active} theme={theme} />
+        <Topbar page={active} theme={theme} onOpenVoiceModal={() => setVoiceModalOpen(true)} />
         <main style={{ flex: 1, overflowY: "auto", background: theme.bg }}>
           <div style={{ padding: "24px 28px", minHeight: "100%" }}>
             {pages[active] ?? pages["Dashboard"]}
           </div>
         </main>
       </div>
+
+      {/* Voice Interaction Modal */}
+      <VoiceAssistantModal
+        theme={theme}
+        isOpen={voiceModalOpen}
+        onClose={() => setVoiceModalOpen(false)}
+      />
     </div>
   )
 }

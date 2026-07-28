@@ -1,9 +1,6 @@
 import re
 from typing import Dict, Any, Optional
 import os
-from langchain_openai import ChatOpenAI
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.output_parsers import StrOutputParser
 
 # Categories supported
 CATEGORIES = ["Definition", "Concept", "Example", "Formula", "Question"]
@@ -24,6 +21,10 @@ class BookmarkCategorizer:
         """
         if self.use_llm and self.api_key:
             try:
+                from langchain_openai import ChatOpenAI
+                from langchain_core.prompts import ChatPromptTemplate
+                from langchain_core.output_parsers import StrOutputParser
+
                 model = ChatOpenAI(
                     model="gpt-4o-mini",
                     temperature=0.0,

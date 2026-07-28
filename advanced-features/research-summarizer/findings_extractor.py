@@ -1,8 +1,5 @@
 import os
 from typing import Dict, Any
-from langchain_openai import ChatOpenAI
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.output_parsers import JsonOutputParser
 from pydantic import BaseModel, Field
 
 class ResearchFindings(BaseModel):
@@ -29,6 +26,10 @@ class FindingsExtractor:
         
         if self.use_llm and self.api_key:
             try:
+                from langchain_openai import ChatOpenAI
+                from langchain_core.prompts import ChatPromptTemplate
+                from langchain_core.output_parsers import JsonOutputParser
+
                 model = ChatOpenAI(
                     model="gpt-4o-mini",
                     temperature=0.1,

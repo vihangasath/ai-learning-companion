@@ -1,4 +1,4 @@
-﻿export default function Topbar({ page, theme }: any) {
+export default function Topbar({ page, theme, onOpenVoiceModal }: any) {
   const { dark, border, text, textSec, muted, accent, setDark, inputBg } = theme
   return (
     <div style={{ height:"57px",background:dark?"#111113":"#ffffff",borderBottom:`1px solid ${border}`,padding:"0 20px",display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0,gap:"12px" }}>
@@ -15,6 +15,24 @@
         </div>
       </div>
       <div style={{ display:"flex",alignItems:"center",gap:"8px",flexShrink:0 }}>
+        <button
+          onClick={onOpenVoiceModal}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "5px",
+            background: `${accent}18`,
+            border: `1px solid ${accent}40`,
+            borderRadius: "6px",
+            padding: "5px 10px",
+            color: accent,
+            cursor: "pointer",
+            fontSize: "12px",
+            fontWeight: "500"
+          }}
+        >
+          <span>🎤</span> Voice AI
+        </button>
         <div style={{ display:"flex",alignItems:"center",gap:"5px",background:inputBg,border:`1px solid ${border}`,borderRadius:"6px",padding:"5px 10px" }}>
           <span style={{ fontSize:"12px" }}>🔥</span>
           <span style={{ fontSize:"12px",fontWeight:"500",color:"#f59e0b" }}>12-day streak</span>

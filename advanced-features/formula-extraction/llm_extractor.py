@@ -1,8 +1,5 @@
 import os
 from typing import List, Dict, Any
-from langchain_openai import ChatOpenAI
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.output_parsers import JsonOutputParser
 from pydantic import BaseModel, Field
 
 class ExtractedFormula(BaseModel):
@@ -25,6 +22,10 @@ def extract_formulas_with_llm(text: str, api_key: str = None) -> List[Dict[str, 
         return _mock_llm_extraction(text)
         
     try:
+        from langchain_openai import ChatOpenAI
+        from langchain_core.prompts import ChatPromptTemplate
+        from langchain_core.output_parsers import JsonOutputParser
+
         # Initialize LangChain model
         model = ChatOpenAI(
             model="gpt-4o-mini",
@@ -49,7 +50,7 @@ def extract_formulas_with_llm(text: str, api_key: str = None) -> List[Dict[str, 
         return result.get("formulas", [])
         
     except Exception as e:
-        # In case of API failure, log and return fallback
+        # In case of API failure or missing library, log and return fallback
         print(f"LLM extraction error: {e}")
         return _mock_llm_extraction(text)
 

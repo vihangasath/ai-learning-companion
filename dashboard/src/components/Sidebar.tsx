@@ -1,4 +1,4 @@
-﻿const navGroups = [
+const navGroups = [
   {
     label: "Overview",
     items: [
@@ -13,6 +13,14 @@
       { label: "Flashcards", icon: "M2 7a2 2 0 012-2h16a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V7z M16 3v4 M8 3v4" },
       { label: "Quizzes", icon: "M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" },
       { label: "Recommendations", icon: "M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" },
+    ]
+  },
+  {
+    label: "AI Tools",
+    items: [
+      { label: "Mind Maps", icon: "M12 2v20 M17 5l-5 5-5-5 M17 19l-5-5-5 5" },
+      { label: "Formulas", icon: "M4 7h16 M4 12h16 M4 17h10" },
+      { label: "Research Papers", icon: "M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z M14 2v6h6" },
     ]
   },
   {
@@ -35,7 +43,7 @@ function NavIcon({ d }: { d: string }) {
 }
 
 export default function Sidebar({ active, setActive, theme }: any) {
-  const { dark, bg, card, border, text, textSec, muted, accent, hover } = theme
+  const { dark, border, text, textSec, muted, accent, hover } = theme
 
   const sidebarBg = dark ? "#111113" : "#ffffff"
 

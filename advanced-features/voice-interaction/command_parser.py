@@ -1,9 +1,6 @@
 import os
 import re
 from typing import Dict, Any, Optional
-from langchain_openai import ChatOpenAI
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.output_parsers import StrOutputParser
 
 # Mapping of voice intents to system actions
 INTENT_MAPPING = {
@@ -31,6 +28,10 @@ class VoiceCommandParser:
         # 1. Try LLM parsing if key is available
         if self.use_llm and self.api_key:
             try:
+                from langchain_openai import ChatOpenAI
+                from langchain_core.prompts import ChatPromptTemplate
+                from langchain_core.output_parsers import StrOutputParser
+
                 model = ChatOpenAI(
                     model="gpt-4o-mini",
                     temperature=0.0,

@@ -1,8 +1,5 @@
 import os
-from typing import List, Dict, Any, Tuple
-from langchain_openai import ChatOpenAI
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.output_parsers import JsonOutputParser
+from typing import List, Dict, Any
 from pydantic import BaseModel, Field
 
 class MindMapEdge(BaseModel):
@@ -26,6 +23,10 @@ def generate_mind_map_from_text(text: str, api_key: str = None) -> Dict[str, Any
         return _mock_mind_map_generation(text)
         
     try:
+        from langchain_openai import ChatOpenAI
+        from langchain_core.prompts import ChatPromptTemplate
+        from langchain_core.output_parsers import JsonOutputParser
+
         model = ChatOpenAI(
             model="gpt-4o-mini",
             temperature=0.2,

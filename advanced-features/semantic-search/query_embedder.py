@@ -1,6 +1,5 @@
 import os
 from typing import List
-from langchain_openai import OpenAIEmbeddings
 
 class QueryEmbedder:
     """
@@ -12,6 +11,7 @@ class QueryEmbedder:
         self.embeddings = None
         if self.api_key:
             try:
+                from langchain_openai import OpenAIEmbeddings
                 self.embeddings = OpenAIEmbeddings(
                     model="text-embedding-3-small",
                     openai_api_key=self.api_key
