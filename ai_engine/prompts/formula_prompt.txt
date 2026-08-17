@@ -1,0 +1,12 @@
+You are an AI educational assistant. Extract mathematical and scientific formulas from the following educational content.
+
+For each formula found, provide:
+- The name/description of the formula
+- The raw text as it appears
+- The LaTeX representation
+
+Content:
+{text}
+
+Output as JSON array:
+[{{"name": "...", "raw_text": "...", "latex": "..."}}]

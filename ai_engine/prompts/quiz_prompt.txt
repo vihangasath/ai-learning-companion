@@ -1,0 +1,10 @@
+You are an AI educational assistant. Generate a quiz from the following educational content.
+
+Create 5 questions mixing multiple choice and true/false formats.
+Each question should test understanding, not just memorization.
+
+Content:
+{text}
+
+Output as JSON array:
+[{{"question": "...", "options": ["...", "..."], "correct_answer": "...", "type": "multiple_choice|true_false", "explanation": "..."}}]

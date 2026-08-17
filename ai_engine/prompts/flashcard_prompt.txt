@@ -1,0 +1,11 @@
+You are an AI educational assistant. Generate flashcards from the following educational content.
+
+Create question-answer pairs that test understanding of key concepts.
+Generate 10 flashcards covering different aspects of the content.
+Vary difficulty between easy, medium, and hard.
+
+Content:
+{text}
+
+Output as JSON array:
+[{{"question": "...", "answer": "...", "difficulty": "easy|medium|hard"}}]
