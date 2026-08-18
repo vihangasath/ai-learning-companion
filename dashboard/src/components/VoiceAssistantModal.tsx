@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { parseVoiceInput, type VoiceCommandResult } from "../services/advancedFeaturesService"
+import { analyticsApi } from "../services/apiService"
 
 interface VoiceAssistantModalProps {
   theme: any
@@ -14,6 +15,7 @@ export default function VoiceAssistantModal({ theme, isOpen, onClose }: VoiceAss
   const [speechText, setSpeechText] = useState("")
   const [isListening, setIsListening] = useState(false)
   const [lastCommand, setLastCommand] = useState<VoiceCommandResult | null>(null)
+  const [isRecordingEvent, setIsRecordingEvent] = useState(false)
 
   const samplePrompts = [
     "Can you explain this part to me again?",
@@ -22,15 +24,36 @@ export default function VoiceAssistantModal({ theme, isOpen, onClose }: VoiceAss
     "Search for gradient descent equations"
   ]
 
-  const handleSimulateListen = (promptText?: string) => {
+  const handleSimulateListen = async (promptText?: string) => {
     const input = promptText || speechText || samplePrompts[0]
     setSpeechText(input)
     setIsListening(true)
 
-    setTimeout(() => {
+    setTimeout(async () => {
       setIsListening(false)
       const res = parseVoiceInput(input)
       setLastCommand(res)
+
+      // Fire-and-forget: record the voice interaction event to the backend
+      if (res.intent !== "UNKNOWN") {
+        setIsRecordingEvent(true)
+        try {
+          await analyticsApi.recordEvent(
+            "voice_command",
+            "",  // no specific content_id from voice
+            `voice-session-${Date.now()}`,
+            {
+              intent: res.intent,
+              confidence: res.confidence,
+              speechText: res.speechText,
+            }
+          )
+        } catch (_) {
+          // silently ignore — analytics recording is non-critical
+        } finally {
+          setIsRecordingEvent(false)
+        }
+      }
     }, 1200)
   }
 
@@ -68,18 +91,23 @@ export default function VoiceAssistantModal({ theme, isOpen, onClose }: VoiceAss
             <div style={{ width: "10px", height: "10px", borderRadius: "50%", background: isListening ? "#ef4444" : accent }} />
             <span style={{ fontSize: "16px", fontWeight: "600", color: text }}>Voice Interaction Assistant</span>
           </div>
-          <button
-            onClick={onClose}
-            style={{
-              background: "transparent",
-              border: "none",
-              color: muted,
-              fontSize: "18px",
-              cursor: "pointer"
-            }}
-          >
-            ✕
-          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            {isRecordingEvent && (
+              <span style={{ fontSize: "10px", color: muted }}>📡 logging...</span>
+            )}
+            <button
+              onClick={onClose}
+              style={{
+                background: "transparent",
+                border: "none",
+                color: muted,
+                fontSize: "18px",
+                cursor: "pointer"
+              }}
+            >
+              ✕
+            </button>
+          </div>
         </div>
 
         {/* Listening Circle / Mic button */}
@@ -111,6 +139,7 @@ export default function VoiceAssistantModal({ theme, isOpen, onClose }: VoiceAss
           <input
             value={speechText}
             onChange={e => setSpeechText(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && handleSimulateListen()}
             placeholder="Type or speak a study command..."
             style={{
               flex: 1,
@@ -182,6 +211,9 @@ export default function VoiceAssistantModal({ theme, isOpen, onClose }: VoiceAss
               <span style={{ fontSize: "11px", color: muted }}>Confidence: {(lastCommand.confidence * 100).toFixed(0)}%</span>
             </div>
             <div style={{ fontSize: "13px", color: text, fontWeight: "500" }}>{lastCommand.actionResponse}</div>
+            {lastCommand.intent !== "UNKNOWN" && (
+              <div style={{ fontSize: "11px", color: muted }}>✓ Event logged to analytics</div>
+            )}
           </div>
         )}
       </div>

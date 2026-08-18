@@ -2,10 +2,24 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from backend.app.core.database import get_db
-from backend.app.schemas.quiz import QuizResponse, QuizSubmitRequest, QuizResultResponse
+from backend.app.schemas.quiz import QuizResponse, QuizListResponse, QuizSubmitRequest, QuizResultResponse
 from backend.app.services.quiz_service import quiz_service
 
 router = APIRouter()
+
+
+@router.get("/user/all")
+def get_all_quizzes(skip: int = 0, limit: int = 50, db: Session = Depends(get_db)):
+    user_id = "default-user-id"
+    quizzes = quiz_service.get_all_by_user(db, user_id, skip, limit)
+
+    return {
+        "status": "success",
+        "data": QuizListResponse(
+            quizzes=[QuizResponse.model_validate(q) for q in quizzes],
+            total=len(quizzes),
+        ),
+    }
 
 
 @router.get("/{content_id}")

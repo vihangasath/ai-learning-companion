@@ -14,6 +14,16 @@ class QuizService:
             .first()
         )
 
+    def get_all_by_user(self, db: Session, user_id: str, skip: int = 0, limit: int = 50) -> list[Quiz]:
+        return (
+            db.query(Quiz)
+            .filter(Quiz.user_id == user_id)
+            .order_by(Quiz.created_at.desc())
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
+
     def submit_quiz(self, db: Session, user_id: str, quiz_id: str, answers: list[dict]) -> dict:
         quiz = db.query(Quiz).filter(Quiz.id == quiz_id).first()
         if not quiz:
