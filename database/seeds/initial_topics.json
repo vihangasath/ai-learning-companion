@@ -1,0 +1,10 @@
+[
+  {"name": "Calculus", "slug": "calculus", "category": "math", "difficulty": "beginner"},
+  {"name": "Linear Algebra", "slug": "linear-algebra", "category": "math", "difficulty": "beginner"},
+  {"name": "Probability & Statistics", "slug": "probability-statistics", "category": "math", "difficulty": "beginner"},
+  {"name": "Python Basics", "slug": "python-basics", "category": "programming", "difficulty": "beginner"},
+  {"name": "Gradient Descent", "slug": "gradient-descent", "category": "ml", "difficulty": "intermediate"},
+  {"name": "Neural Networks", "slug": "neural-networks", "category": "ml", "difficulty": "intermediate"},
+  {"name": "Deep Learning", "slug": "deep-learning", "category": "dl", "difficulty": "advanced"},
+  {"name": "Transformers", "slug": "transformers", "category": "dl", "difficulty": "advanced"}
+]

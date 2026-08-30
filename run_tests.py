@@ -76,6 +76,13 @@ def suite_ai_engine():
 
 def suite_backend():
     print("\n=== Backend API ===")
+    test_db = "./test_learnflow.db"
+    if os.path.exists(test_db):
+        try:
+            os.remove(test_db)
+        except Exception:
+            pass
+
     from backend.app.core.database import engine, Base
     import backend.app.models
     Base.metadata.create_all(bind=engine)
@@ -83,6 +90,7 @@ def suite_backend():
     from fastapi.testclient import TestClient
     from backend.app.main import app
     client = TestClient(app)
+
 
     test("health_check", lambda: (
         lambda r: (None if r.status_code == 200 and r.json()["status"] == "ok" else 1/0)

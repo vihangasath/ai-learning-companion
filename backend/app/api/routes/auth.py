@@ -1,9 +1,12 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from backend.app.core.database import get_db
 from backend.app.models.user import User
 from backend.app.schemas.auth import RegisterRequest, LoginRequest, UserResponse
+from auth.utils.password import get_password_hash, verify_password
+from auth.providers.jwt_provider import create_access_token
+from auth.middleware.auth_middleware import get_current_user, get_optional_user
 
 router = APIRouter()
 
@@ -16,7 +19,7 @@ def register(req: RegisterRequest, db: Session = Depends(get_db)):
 
     user = User(
         email=req.email,
-        password_hash=req.password,
+        password_hash=get_password_hash(req.password),
         name=req.name,
     )
     db.add(user)
@@ -33,22 +36,33 @@ def register(req: RegisterRequest, db: Session = Depends(get_db)):
 @router.post("/login")
 def login(req: LoginRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == req.email).first()
-    if not user or user.password_hash != req.password:
+    if not user:
         raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    # Verify password with bcrypt, with fallback to plaintext check for backwards compatibility
+    is_valid = verify_password(req.password, user.password_hash) or user.password_hash == req.password
+    if not is_valid:
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    token = create_access_token(data={"sub": user.id, "email": user.email, "role": user.role})
 
     return {
         "status": "success",
         "data": {
-            "access_token": "placeholder-token",
+            "access_token": token,
             "token_type": "bearer",
+            "user": UserResponse.model_validate(user),
         },
         "message": "Login successful",
     }
 
 
 @router.get("/me")
-def get_me(db: Session = Depends(get_db)):
-    user = db.query(User).first()
+def get_me(
+    current_user: User | None = Depends(get_optional_user),
+    db: Session = Depends(get_db),
+):
+    user = current_user or db.query(User).first()
     if not user:
         raise HTTPException(status_code=404, detail="No user found")
 
@@ -56,3 +70,4 @@ def get_me(db: Session = Depends(get_db)):
         "status": "success",
         "data": UserResponse.model_validate(user),
     }
+

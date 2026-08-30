@@ -1,14 +1,27 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+from backend.app.core.database import get_db
+from backend.app.core.security import get_optional_user
+from backend.app.models.user import User
+from recommendation.engine.recommender import get_recommendations
 
 router = APIRouter()
 
 
 @router.get("")
-def get_recommendations():
+def recommendations_endpoint(
+    current_user: User | None = Depends(get_optional_user),
+    db: Session = Depends(get_db),
+    limit: int = 5,
+):
+    user_id = current_user.id if current_user else None
+    recs = get_recommendations(db=db, user_id=user_id, limit=limit)
     return {
         "status": "success",
         "data": {
-            "recommendations": [],
+            "recommendations": recs,
+            "total": len(recs),
         },
-        "message": "Recommendations will be available when Member 3 integrates the recommendation engine",
+        "message": "Recommendations retrieved successfully",
     }
+

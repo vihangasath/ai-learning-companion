@@ -11,3 +11,14 @@ pytest>=7.0.0
 python-dotenv>=1.0.0
 requests>=2.31.0
 tiktoken>=0.4.0
+fastapi
+uvicorn
+sqlalchemy
+pydantic
+pydantic-settings
+python-jose[cryptography]
+passlib[bcrypt]
+bcrypt
+python-multipart
+requests
+httpx
