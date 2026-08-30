@@ -2,31 +2,59 @@
 Auth Middleware - Dependency for protected routes
 """
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
-from jose import JWTError
 from database.connection import get_db
-from database.schemas.models import User
-from auth.providers.jwt_provider import SECRET_KEY, ALGORITHM, decode_token
-from jose import jwt
+from backend.app.models.user import User
+from auth.providers.jwt_provider import decode_token
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
-def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+security_scheme = HTTPBearer(auto_error=False)
+
+
+def get_current_user(
+    credentials: HTTPAuthorizationCredentials | None = Depends(security_scheme),
+    db: Session = Depends(get_db)
+) -> User:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        email: str = payload.get("sub")
-        if email is None:
-            raise credentials_exception
-    except JWTError:
+    if credentials is None:
         raise credentials_exception
-    
-    user = db.query(User).filter(User.email == email).first()
+
+    token = credentials.credentials
+    payload = decode_token(token)
+    if not payload:
+        raise credentials_exception
+
+    sub = payload.get("sub")
+    email = payload.get("email")
+    if not sub and not email:
+        raise credentials_exception
+
+    user = None
+    if sub:
+        user = db.query(User).filter(User.id == sub).first()
+        if not user:
+            user = db.query(User).filter(User.email == sub).first()
+    if not user and email:
+        user = db.query(User).filter(User.email == email).first()
+
     if user is None:
         raise credentials_exception
     return user
+
+
+def get_optional_user(
+    credentials: HTTPAuthorizationCredentials | None = Depends(security_scheme),
+    db: Session = Depends(get_db)
+) -> User | None:
+    if credentials is None:
+        return None
+    try:
+        return get_current_user(credentials=credentials, db=db)
+    except HTTPException:
+        return None
+
