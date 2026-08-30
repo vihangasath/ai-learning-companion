@@ -2,14 +2,17 @@
 Recommendation Engine - Core Deliverable
 Explainable, personalized recommendations based on knowledge graph + mastery
 """
-from sqlalchemy.orm import Session
 from typing import List, Dict
-from database.schemas.models import User, Topic, UserTopicProgress
+from sqlalchemy.orm import Session
+from backend.app.models.user import User
+from database.schemas.models import Topic, UserTopicProgress
 from recommendation.engine.knowledge_graph import KNOWLEDGE_GRAPH_EDGES, get_prerequisites
+
+
 from shared.constants.app_constants import TOPIC_TIME_ESTIMATES
 
-def get_user_progress_map(db: Session, user_id: int) -> Dict[str, UserTopicProgress]:
-    progresses = db.query(UserTopicProgress).filter(UserTopicProgress.user_id == user_id).all()
+def get_user_progress_map(db: Session, user_id: str | int) -> Dict[str, UserTopicProgress]:
+    progresses = db.query(UserTopicProgress).filter(UserTopicProgress.user_id == str(user_id)).all()
     progress_map = {}
     for p in progresses:
         topic = db.query(Topic).filter(Topic.id == p.topic_id).first()
@@ -61,18 +64,21 @@ def calculate_topic_score(topic_name: str, progress_map: Dict, user_level: str):
     
     return (score, reason, mastered_prereqs)
 
-def get_recommendations(db: Session, user_id: int, limit: int = 5) -> List[Dict]:
-    user = db.query(User).filter(User.id == user_id).first()
+def get_recommendations(db: Session, user_id: str | int | None = None, limit: int = 5) -> List[Dict]:
+    user = None
+    if user_id:
+        user = db.query(User).filter(User.id == str(user_id)).first()
     if not user:
-        return []
+        user = db.query(User).first()
     
-    progress_map = get_user_progress_map(db, user_id)
+    learning_level = user.learning_level if user and hasattr(user, "learning_level") else "beginner"
+    progress_map = get_user_progress_map(db, user.id) if user else {}
     all_topics = db.query(Topic).all()
     
     scored_topics = []
     
     for topic in all_topics:
-        score, reason, matched = calculate_topic_score(topic.name, progress_map, user.learning_level)
+        score, reason, matched = calculate_topic_score(topic.name, progress_map, learning_level)
         if score > 0:
             scored_topics.append({
                 "topic": topic,
@@ -87,28 +93,39 @@ def get_recommendations(db: Session, user_id: int, limit: int = 5) -> List[Dict]
     recommendations = []
     for idx, item in enumerate(scored_topics[:limit]):
         recommendations.append({
+            "id": str(item["topic"].id),
+            "title": item["topic"].name,
+            "subject": item["topic"].category or "General",
             "topic": item["topic"],
             "reason": item["reason"],
             "priority": idx + 1,
+            "difficulty": item["topic"].difficulty or "beginner",
             "matched_prerequisites": item["matched_prerequisites"],
+            "duration": item["estimated_time"],
             "estimated_time": item["estimated_time"],
-            "score": item["score"]
+            "match_score": round(item["score"], 1),
+            "score": round(item["score"], 1)
         })
     
-    if len(progress_map) == 0:
-        beginner_topics = [t for t in all_topics if t.difficulty == "beginner"]
-        recommendations = []
-        for idx, topic in enumerate(beginner_topics[:limit]):
+    if len(recommendations) == 0:
+        from recommendation.engine.knowledge_graph import KNOWLEDGE_GRAPH_TOPICS
+        for idx, t in enumerate(KNOWLEDGE_GRAPH_TOPICS[:limit]):
             recommendations.append({
-                "topic": topic,
-                "reason": f"Perfect starting point for {user.learning_level} learners",
+                "id": str(idx + 1),
+                "title": t["name"],
+                "subject": t.get("category", "General"),
+                "reason": f"Perfect starting point for {learning_level} learners",
                 "priority": idx + 1,
+                "difficulty": t.get("difficulty", "beginner"),
                 "matched_prerequisites": [],
-                "estimated_time": TOPIC_TIME_ESTIMATES.get(topic.name, "10 hours"),
-                "score": 90 - idx*5
+                "duration": TOPIC_TIME_ESTIMATES.get(t["name"], "10 hours"),
+                "estimated_time": TOPIC_TIME_ESTIMATES.get(t["name"], "10 hours"),
+                "match_score": 90 - idx * 5,
+                "score": 90 - idx * 5
             })
     
     return recommendations
+
 
 def get_weak_areas(db: Session, user_id: int):
     weak = db.query(UserTopicProgress).filter(
