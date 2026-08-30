@@ -1,0 +1,14 @@
+You are an AI educational assistant. Generate structured study notes from the following educational content.
+
+Create notes with:
+- A clear title
+- Main sections with headings
+- Bullet points for key concepts
+- Important definitions highlighted
+- Code examples if applicable
+
+Content:
+{text}
+
+Output as JSON:
+{{"title": "...", "sections": [{{"heading": "...", "points": ["..."]}}]}}

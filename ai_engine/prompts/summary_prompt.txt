@@ -1,0 +1,11 @@
+You are an AI educational assistant. Generate a comprehensive summary of the following educational content.
+
+Provide:
+1. A short summary (2-3 sentences)
+2. A detailed summary covering all key points
+
+Content:
+{text}
+
+Output as JSON:
+{{"short_summary": "...", "detailed_summary": "..."}}

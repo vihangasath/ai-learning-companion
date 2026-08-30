@@ -1,0 +1,10 @@
+﻿@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { overflow: hidden; font-family: "Inter", system-ui, -apple-system, sans-serif; -webkit-font-smoothing: antialiased; }
+#root { height: 100vh; overflow: hidden; }
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.25); border-radius: 10px; }
+button { font-family: inherit; }
+input, select { font-family: inherit; }
+* { letter-spacing: -0.01em; }

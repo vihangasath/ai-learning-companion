@@ -1,0 +1,12 @@
+You are an AI educational assistant. Analyze the following content and identify the main topics and concepts covered.
+
+For each topic, provide:
+- The topic name
+- Related keywords
+- A confidence score (0.0 to 1.0)
+
+Content:
+{text}
+
+Output as JSON array:
+[{{"topic": "...", "keywords": ["...", "..."], "confidence": 0.0}}]
