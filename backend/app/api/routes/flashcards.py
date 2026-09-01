@@ -8,13 +8,15 @@ from backend.app.schemas.flashcard import (
     FlashcardUpdateRequest,
 )
 from backend.app.services.flashcard_service import flashcard_service
+from backend.app.auth.middleware.auth_middleware import get_current_user
+from backend.app.models.user import User
 
 router = APIRouter()
 
 
 @router.get("/user/all")
-def get_all_flashcards(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    user_id = "default-user-id"
+def get_all_flashcards(skip: int = 0, limit: int = 100, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    user_id = current_user.id
     flashcards = flashcard_service.get_all_by_user(db, user_id, skip, limit)
 
     return {
@@ -27,8 +29,8 @@ def get_all_flashcards(skip: int = 0, limit: int = 100, db: Session = Depends(ge
 
 
 @router.get("/{content_id}")
-def get_flashcards(content_id: str, db: Session = Depends(get_db)):
-    user_id = "default-user-id"
+def get_flashcards(content_id: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    user_id = current_user.id
     flashcards = flashcard_service.get_by_content_id(db, content_id, user_id)
 
     return {
@@ -41,8 +43,8 @@ def get_flashcards(content_id: str, db: Session = Depends(get_db)):
 
 
 @router.put("/{flashcard_id}/learned")
-def mark_learned(flashcard_id: str, req: FlashcardUpdateRequest, db: Session = Depends(get_db)):
-    user_id = "default-user-id"
+def mark_learned(flashcard_id: str, req: FlashcardUpdateRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    user_id = current_user.id
     fc = flashcard_service.mark_learned(db, flashcard_id, user_id, req.is_learned)
     if not fc:
         raise HTTPException(status_code=404, detail="Flashcard not found")

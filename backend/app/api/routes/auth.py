@@ -4,9 +4,9 @@ from sqlalchemy.orm import Session
 from backend.app.core.database import get_db
 from backend.app.models.user import User
 from backend.app.schemas.auth import RegisterRequest, LoginRequest, UserResponse
-from auth.utils.password import get_password_hash, verify_password
-from auth.providers.jwt_provider import create_access_token
-from auth.middleware.auth_middleware import get_current_user, get_optional_user
+from backend.app.auth.utils.password import get_password_hash, verify_password
+from backend.app.auth.providers.jwt_provider import create_access_token
+from backend.app.auth.middleware.auth_middleware import get_current_user, get_optional_user
 
 router = APIRouter()
 

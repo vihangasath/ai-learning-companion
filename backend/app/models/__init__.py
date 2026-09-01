@@ -5,7 +5,7 @@ from backend.app.models.quiz import Quiz, QuizResult
 from backend.app.models.study_session import StudySession
 from backend.app.models.learning_stat import LearningStat
 from backend.app.models.analytics_event import AnalyticsEvent
-from database.schemas.models import Topic, TopicPrerequisite, UserTopicProgress, WatchHistory, QuizAttempt
+from backend.app.database.schemas.models import Topic, TopicPrerequisite, UserTopicProgress, WatchHistory, QuizAttempt
 
 __all__ = [
     "User",

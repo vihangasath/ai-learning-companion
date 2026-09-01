@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from backend.app.core.database import get_db
 from backend.app.core.security import get_optional_user
 from backend.app.models.user import User
-from recommendation.engine.recommender import get_recommendations
+from backend.app.recommendation.engine.recommender import get_recommendations
 
 router = APIRouter()
 

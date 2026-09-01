@@ -4,13 +4,15 @@ from sqlalchemy.orm import Session
 from backend.app.core.database import get_db
 from backend.app.schemas.quiz import QuizResponse, QuizListResponse, QuizSubmitRequest, QuizResultResponse
 from backend.app.services.quiz_service import quiz_service
+from backend.app.auth.middleware.auth_middleware import get_current_user
+from backend.app.models.user import User
 
 router = APIRouter()
 
 
 @router.get("/user/all")
-def get_all_quizzes(skip: int = 0, limit: int = 50, db: Session = Depends(get_db)):
-    user_id = "default-user-id"
+def get_all_quizzes(skip: int = 0, limit: int = 50, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    user_id = current_user.id
     quizzes = quiz_service.get_all_by_user(db, user_id, skip, limit)
 
     return {
@@ -23,8 +25,8 @@ def get_all_quizzes(skip: int = 0, limit: int = 50, db: Session = Depends(get_db
 
 
 @router.get("/{content_id}")
-def get_quiz(content_id: str, db: Session = Depends(get_db)):
-    user_id = "default-user-id"
+def get_quiz(content_id: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    user_id = current_user.id
     quiz = quiz_service.get_by_content_id(db, content_id, user_id)
     if not quiz:
         raise HTTPException(status_code=404, detail="Quiz not found for this content")
@@ -36,8 +38,8 @@ def get_quiz(content_id: str, db: Session = Depends(get_db)):
 
 
 @router.post("/submit")
-def submit_quiz(req: QuizSubmitRequest, db: Session = Depends(get_db)):
-    user_id = "default-user-id"
+def submit_quiz(req: QuizSubmitRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    user_id = current_user.id
     try:
         result = quiz_service.submit_quiz(db, user_id, req.quiz_id, req.answers)
     except ValueError as e:
