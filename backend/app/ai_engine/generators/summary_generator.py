@@ -2,15 +2,16 @@ import os
 import json
 from pathlib import Path
 
+from backend.app.ai_engine.models.llm_config import llm_config, build_chat_model, extract_text
+
 
 class SummaryGenerator:
     def __init__(self):
-        self.api_key = os.getenv("OPENAI_API_KEY", "")
         prompt_path = Path(__file__).parent.parent / "prompts" / "summary_prompt.txt"
         self.prompt_template = prompt_path.read_text() if prompt_path.exists() else ""
 
     def generate(self, text: str) -> dict:
-        if not self.api_key:
+        if llm_config.active_provider == "mock":
             return self._mock_summary()
 
         try:
@@ -19,19 +20,14 @@ class SummaryGenerator:
             return self._mock_summary()
 
     def _llm_summary(self, text: str) -> dict:
-        from langchain_openai import ChatOpenAI
-        from langchain.prompts import ChatPromptTemplate
+        from langchain_core.prompts import ChatPromptTemplate
 
-        llm = ChatOpenAI(
-            model=os.getenv("OPENAI_MODEL_NAME", "gpt-4o-mini"),
-            temperature=float(os.getenv("LLM_TEMPERATURE", "0.3")),
-            api_key=self.api_key,
-        )
+        llm = build_chat_model()
         prompt = ChatPromptTemplate.from_template(self.prompt_template)
         chain = prompt | llm
 
         result = chain.invoke({"text": text[:8000]})
-        return json.loads(result.content.strip().strip("```json").strip("```").strip())
+        return json.loads(extract_text(result).strip().strip("```json").strip("```").strip())
 
     def _mock_summary(self) -> dict:
         return {

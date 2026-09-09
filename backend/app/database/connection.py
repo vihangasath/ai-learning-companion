@@ -10,9 +10,9 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-# === Force load .env from project root ===
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-ENV_PATH = PROJECT_ROOT / ".env"
+# === Force load .env from backend directory ===
+BACKEND_DIR = Path(__file__).resolve().parent.parent.parent
+ENV_PATH = BACKEND_DIR / ".env"
 
 if ENV_PATH.exists():
     load_dotenv(dotenv_path=ENV_PATH, override=False)
@@ -22,9 +22,11 @@ else:
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./learnflow.db")
 
-# Neon fix: postgres:// -> postgresql://
+# Neon fix: postgres:// -> postgresql:// (psycopg v3 driver)
 if DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+psycopg://", 1)
+elif DATABASE_URL.startswith("postgresql://"):
+    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg://", 1)
 
 connect_args = {"check_same_thread": False} if "sqlite" in DATABASE_URL else {}
 

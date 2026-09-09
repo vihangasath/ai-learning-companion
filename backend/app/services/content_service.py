@@ -20,7 +20,7 @@ class ContentService:
     ) -> dict:
         content_id = str(uuid.uuid4())
 
-        from ai_engine.pipelines.content_pipeline import ContentPipeline
+        from backend.app.ai_engine.pipelines.content_pipeline import ContentPipeline
 
         pipeline = ContentPipeline()
         result = pipeline.run(

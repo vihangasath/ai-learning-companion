@@ -2,36 +2,32 @@ import os
 import json
 from pathlib import Path
 
+from backend.app.ai_engine.models.llm_config import llm_config, build_chat_model, extract_text
+
 
 class NoteGenerator:
     def __init__(self):
-        self.api_key = os.getenv("OPENAI_API_KEY", "")
         prompt_path = Path(__file__).parent.parent / "prompts" / "note_prompt.txt"
         self.prompt_template = prompt_path.read_text() if prompt_path.exists() else ""
 
     def generate(self, text: str, title_hint: str = "") -> dict:
-        if not self.api_key:
+        if llm_config.active_provider == "mock":
             return self._mock_notes(title_hint)
 
         try:
-            return self._llm_notes(text)
+            return self._llm_notes(text, title_hint)
         except Exception:
             return self._mock_notes(title_hint)
 
-    def _llm_notes(self, text: str) -> dict:
-        from langchain_openai import ChatOpenAI
-        from langchain.prompts import ChatPromptTemplate
+    def _llm_notes(self, text: str, title_hint: str = "") -> dict:
+        from langchain_core.prompts import ChatPromptTemplate
 
-        llm = ChatOpenAI(
-            model=os.getenv("OPENAI_MODEL_NAME", "gpt-4o-mini"),
-            temperature=float(os.getenv("LLM_TEMPERATURE", "0.3")),
-            api_key=self.api_key,
-        )
+        llm = build_chat_model()
         prompt = ChatPromptTemplate.from_template(self.prompt_template)
         chain = prompt | llm
 
-        result = chain.invoke({"text": text[:8000]})
-        return json.loads(result.content.strip().strip("```json").strip("```").strip())
+        result = chain.invoke({"text": text[:8000], "title_hint": title_hint})
+        return json.loads(extract_text(result).strip().strip("```json").strip("```").strip())
 
     def _mock_notes(self, title_hint: str = "") -> dict:
         return {

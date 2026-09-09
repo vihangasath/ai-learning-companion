@@ -1,27 +1,17 @@
 import { useEffect, useState } from "react"
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, LineChart, Line } from "recharts"
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts"
 import Card from "../components/Card"
 import { analyticsApi, type StudyTimeData, type FocusData, type StreakData, type PerformanceData, type RecentActivityItem } from "../services/apiService"
 
-const MOCK_MONTHLY = [
-  { month: "Jan", hours: 28, quizzes: 8, videos: 12 }, { month: "Feb", hours: 35, quizzes: 11, videos: 15 },
-  { month: "Mar", hours: 31, quizzes: 9, videos: 13 }, { month: "Apr", hours: 42, quizzes: 14, videos: 18 },
-  { month: "May", hours: 38, quizzes: 12, videos: 16 }, { month: "Jun", hours: 52, quizzes: 18, videos: 22 },
-  { month: "Jul", hours: 45, quizzes: 15, videos: 19 },
-]
-const MOCK_FOCUS = [
-  { day: "Mon", focus: 82 }, { day: "Tue", focus: 78 }, { day: "Wed", focus: 91 },
-  { day: "Thu", focus: 87 }, { day: "Fri", focus: 84 }, { day: "Sat", focus: 72 }, { day: "Sun", focus: 79 },
-]
-const MOCK_SESSIONS = [
-  { date: "Jul 16", day: "Wed", subject: "CS", content: "Gradient Descent explained", duration: "32 min", focus: "91%", type: "Video" },
-  { date: "Jul 16", day: "Wed", subject: "Math", content: "Calculus Basics Quiz", duration: "18 min", focus: "88%", type: "Quiz" },
-  { date: "Jul 15", day: "Tue", subject: "Math", content: "Linear Algebra Flashcards", duration: "25 min", focus: "85%", type: "Flashcard" },
-  { date: "Jul 15", day: "Tue", subject: "CS", content: "Python for Data Science", duration: "48 min", focus: "79%", type: "Video" },
-  { date: "Jul 14", day: "Mon", subject: "Physics", content: "Quantum Mechanics Intro", duration: "41 min", focus: "82%", type: "Video" },
-]
-const typeColor: Record<string, string> = { Video: "#14b8a6", Quiz: "#22c55e", Flashcard: "#3b82f6" }
-const subjectColor: Record<string, string> = { CS: "#14b8a6", Math: "#3b82f6", Physics: "#8b5cf6", History: "#f59e0b" }
+const typeColor: Record<string, string> = { Video: "#14b8a6", Quiz: "#22c55e", Flashcard: "#3b82f6", Notes: "#8b5cf6", Session: "#f59e0b" }
+
+function tagForEvent(eventType: string): keyof typeof typeColor {
+  if (eventType.includes("quiz")) return "Quiz"
+  if (eventType.includes("flash")) return "Flashcard"
+  if (eventType.includes("note") || eventType.includes("summary")) return "Notes"
+  if (eventType.includes("session")) return "Session"
+  return "Video"
+}
 
 export default function AnalyticsPage({ theme }: any) {
   const { dark, text, textSec, muted, accent, border, card, hover } = theme
@@ -40,11 +30,11 @@ export default function AnalyticsPage({ theme }: any) {
       setApiLoading(true)
       try {
         const [st, fc, sk, perf, rc] = await Promise.allSettled([
-          analyticsApi.getStudyTime(30),
+          analyticsApi.getStudyTime(90),
           analyticsApi.getFocus(7),
           analyticsApi.getStreaks(),
           analyticsApi.getPerformance(),
-          analyticsApi.getRecent(20),
+          analyticsApi.getRecent(50),
         ])
         if (cancelled) return
         if (st.status === "fulfilled") setStudyTime(st.value)
@@ -53,7 +43,7 @@ export default function AnalyticsPage({ theme }: any) {
         if (perf.status === "fulfilled") setPerformance(perf.value)
         if (rc.status === "fulfilled") setRecent(rc.value)
       } catch (_) {
-        // fall back to mock
+        // backend unavailable — leave state empty
       } finally {
         if (!cancelled) setApiLoading(false)
       }
@@ -62,24 +52,46 @@ export default function AnalyticsPage({ theme }: any) {
     return () => { cancelled = true }
   }, [])
 
-  const totalHours = studyTime ? studyTime.total_hours : 271
-  const sessionCount = recent ? recent.length : 142
-  const focusRate = focus ? focus.focus_rate : 81.9
+  // Real values only — no mock fallbacks
+  const totalHours = studyTime ? studyTime.total_hours : 0
+  const sessionCount = (recent ?? []).length
+  const focusRate = focus ? focus.focus_rate : 0
   const currentStreak = streaks ? streaks.current_streak : 0
 
-  const focusChartData = focus?.daily_breakdown?.length ? focus.daily_breakdown : MOCK_FOCUS
+  // Monthly hours from real daily breakdown (group by YYYY-MM)
+  const monthlyData = (() => {
+    const groups: Record<string, number> = {}
+    ;(studyTime?.daily_breakdown ?? []).forEach(d => {
+      const m = (d.date || "").slice(0, 7)
+      if (!m) return
+      groups[m] = (groups[m] ?? 0) + d.hours
+    })
+    return Object.entries(groups).sort().slice(-6).map(([m, hours]) => {
+      const [y, mo] = m.split("-")
+      const label = new Date(Number(y), Number(mo) - 1, 1).toLocaleDateString("en-US", { month: "short" })
+      return { month: label, hours: Math.round(hours * 10) / 10 }
+    })
+  })()
 
-  const sessionRows = recent?.length
-    ? recent.slice(0, 8).map(item => ({
-        date: item.timestamp ? new Date(item.timestamp).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "-",
-        day: item.timestamp ? new Date(item.timestamp).toLocaleDateString("en-US", { weekday: "short" }) : "-",
-        subject: "General",
-        content: item.content_id || item.event_type,
-        duration: "-",
-        focus: "-",
-        type: item.event_type?.includes("quiz") ? "Quiz" : item.event_type?.includes("flash") ? "Flashcard" : "Video",
-      }))
-    : MOCK_SESSIONS
+  const focusChartData = (focus?.daily_breakdown ?? []).map(d => ({ day: d.day, focus: d.focus }))
+
+  // Activity breakdown by type from real recent events
+  const typeCounts = (recent ?? []).reduce<Record<string, number>>((acc, item) => {
+    const tag = tagForEvent(item.event_type)
+    acc[tag] = (acc[tag] ?? 0) + 1
+    return acc
+  }, {})
+  const activityChartData = Object.entries(typeCounts).map(([name, count]) => ({ name, count }))
+
+  const sessionRows = (recent ?? []).slice(0, 8).map(item => ({
+    date: item.timestamp ? new Date(item.timestamp).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "-",
+    day: item.timestamp ? new Date(item.timestamp).toLocaleDateString("en-US", { weekday: "short" }) : "-",
+    subject: "General",
+    content: item.content_id || item.event_type,
+    duration: "-",
+    focus: "-",
+    type: tagForEvent(item.event_type),
+  }))
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "14px", paddingBottom: "16px" }}>
@@ -93,15 +105,15 @@ export default function AnalyticsPage({ theme }: any) {
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: "12px" }}>
         {[
-          { label: "Total Hours", value: `${totalHours}h`, delta: "+18% this month", color: "#14b8a6" },
-          { label: "Avg Daily", value: `${studyTime ? (studyTime.total_hours / 30).toFixed(1) : 1.8}h`, delta: "+0.3h vs last", color: "#3b82f6" },
-          { label: "Sessions", value: String(sessionCount), delta: "+23 this month", color: "#22c55e" },
-          { label: "Focus Rate", value: `${focusRate}%`, delta: "+4.2% this month", color: "#f59e0b" },
+          { label: "Total Hours", value: `${totalHours}h`, delta: `${(studyTime?.daily_breakdown?.length ?? 0)} days tracked`, color: "#14b8a6" },
+          { label: "Avg Weekly", value: `${(totalHours / 13).toFixed(1)}h`, delta: "over 90 days", color: "#3b82f6" },
+          { label: "Sessions", value: String(sessionCount), delta: `${currentStreak} day streak`, color: "#22c55e" },
+          { label: "Focus Rate", value: `${focusRate}%`, delta: "recent sessions", color: "#f59e0b" },
         ].map(s => (
           <Card key={s.label} theme={theme} style={{ padding: "20px" }}>
             <div style={{ fontSize: "11px", color: muted, fontWeight: "500", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "10px" }}>{s.label}</div>
             <div style={{ fontSize: "30px", fontWeight: "700", color: s.color, letterSpacing: "-0.04em", lineHeight: 1, marginBottom: "6px" }}>{s.value}</div>
-            <div style={{ fontSize: "12px", color: "#22c55e", fontWeight: "500" }}>↑ {s.delta}</div>
+            <div style={{ fontSize: "12px", color: muted, fontWeight: "500" }}>{s.delta}</div>
           </Card>
         ))}
       </div>
@@ -110,52 +122,61 @@ export default function AnalyticsPage({ theme }: any) {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "18px" }}>
           <div>
             <div style={{ fontSize: "14px", fontWeight: "500", color: text, marginBottom: "2px" }}>Monthly Study Hours</div>
-            <div style={{ fontSize: "12px", color: muted }}>Total hours studied per month this year</div>
+            <div style={{ fontSize: "12px", color: muted }}>Recorded study time per month (last 90 days)</div>
           </div>
         </div>
-        <ResponsiveContainer width="100%" height={180}>
-          <AreaChart data={MOCK_MONTHLY}>
-            <defs><linearGradient id="mg" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={accent} stopOpacity={0.2} /><stop offset="95%" stopColor={accent} stopOpacity={0} /></linearGradient></defs>
-            <CartesianGrid strokeDasharray="3 3" stroke={dark ? "rgba(255,255,255,0.04)" : "#f4f4f5"} vertical={false} />
-            <XAxis dataKey="month" tick={{ fontSize: 11, fill: muted }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fontSize: 11, fill: muted }} axisLine={false} tickLine={false} />
-            <Tooltip contentStyle={tip} />
-            <Area type="monotone" dataKey="hours" stroke={accent} strokeWidth={2} fill="url(#mg)" dot={{ fill: accent, r: 3, strokeWidth: 0 }} />
-          </AreaChart>
-        </ResponsiveContainer>
+        {monthlyData.length ? (
+          <ResponsiveContainer width="100%" height={180}>
+            <AreaChart data={monthlyData}>
+              <defs><linearGradient id="mg" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={accent} stopOpacity={0.2} /><stop offset="95%" stopColor={accent} stopOpacity={0} /></linearGradient></defs>
+              <CartesianGrid strokeDasharray="3 3" stroke={dark ? "rgba(255,255,255,0.04)" : "#f4f4f5"} vertical={false} />
+              <XAxis dataKey="month" tick={{ fontSize: 11, fill: muted }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: muted }} axisLine={false} tickLine={false} />
+              <Tooltip contentStyle={tip} />
+              <Area type="monotone" dataKey="hours" stroke={accent} strokeWidth={2} fill="url(#mg)" dot={{ fill: accent, r: 3, strokeWidth: 0 }} />
+            </AreaChart>
+          </ResponsiveContainer>
+        ) : (
+          <div style={{ height: 180, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "13px", color: muted }}>
+            No study time recorded yet. Study sessions will appear here once you record activity.
+          </div>
+        )}
       </Card>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
         <Card theme={theme}>
           <div style={{ fontSize: "14px", fontWeight: "500", color: text, marginBottom: "2px" }}>Daily Focus Rate</div>
           <div style={{ fontSize: "12px", color: muted, marginBottom: "14px" }}>This week average</div>
-          <ResponsiveContainer width="100%" height={155}>
-            <BarChart data={focusChartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke={dark ? "rgba(255,255,255,0.04)" : "#f4f4f5"} vertical={false} />
-              <XAxis dataKey="day" tick={{ fontSize: 11, fill: muted }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: muted }} axisLine={false} tickLine={false} domain={[0, 100]} />
-              <Tooltip contentStyle={tip} formatter={(v: any) => [v + "%", "Focus"]} />
-              <Bar dataKey="focus" fill={accent} radius={[4, 4, 0, 0]} barSize={22} opacity={0.85} />
-            </BarChart>
-          </ResponsiveContainer>
+          {focusChartData.length ? (
+            <ResponsiveContainer width="100%" height={155}>
+              <BarChart data={focusChartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke={dark ? "rgba(255,255,255,0.04)" : "#f4f4f5"} vertical={false} />
+                <XAxis dataKey="day" tick={{ fontSize: 11, fill: muted }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: muted }} axisLine={false} tickLine={false} domain={[0, 100]} />
+                <Tooltip contentStyle={tip} formatter={(v: any) => [v + "%", "Focus"]} />
+                <Bar dataKey="focus" fill={accent} radius={[4, 4, 0, 0]} barSize={22} opacity={0.85} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div style={{ height: 155, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "13px", color: muted }}>No focus data recorded yet.</div>
+          )}
         </Card>
         <Card theme={theme}>
-          <div style={{ fontSize: "14px", fontWeight: "500", color: text, marginBottom: "2px" }}>Content Breakdown</div>
-          <div style={{ fontSize: "12px", color: muted, marginBottom: "14px" }}>Videos vs quizzes per month</div>
-          <ResponsiveContainer width="100%" height={155}>
-            <LineChart data={MOCK_MONTHLY}>
-              <CartesianGrid strokeDasharray="3 3" stroke={dark ? "rgba(255,255,255,0.04)" : "#f4f4f5"} vertical={false} />
-              <XAxis dataKey="month" tick={{ fontSize: 11, fill: muted }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: muted }} axisLine={false} tickLine={false} />
-              <Tooltip contentStyle={tip} />
-              <Line type="monotone" dataKey="videos" stroke="#14b8a6" strokeWidth={2} dot={{ fill: "#14b8a6", r: 3, strokeWidth: 0 }} />
-              <Line type="monotone" dataKey="quizzes" stroke="#3b82f6" strokeWidth={2} dot={{ fill: "#3b82f6", r: 3, strokeWidth: 0 }} />
-            </LineChart>
-          </ResponsiveContainer>
-          <div style={{ display: "flex", gap: "14px", marginTop: "8px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "5px" }}><div style={{ width: "12px", height: "2px", background: "#14b8a6", borderRadius: "1px" }} /><span style={{ fontSize: "11px", color: muted }}>Videos</span></div>
-            <div style={{ display: "flex", alignItems: "center", gap: "5px" }}><div style={{ width: "12px", height: "2px", background: "#3b82f6", borderRadius: "1px" }} /><span style={{ fontSize: "11px", color: muted }}>Quizzes</span></div>
-          </div>
+          <div style={{ fontSize: "14px", fontWeight: "500", color: text, marginBottom: "2px" }}>Activity by Type</div>
+          <div style={{ fontSize: "12px", color: muted, marginBottom: "14px" }}>Recent events logged</div>
+          {activityChartData.length ? (
+            <ResponsiveContainer width="100%" height={155}>
+              <BarChart data={activityChartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke={dark ? "rgba(255,255,255,0.04)" : "#f4f4f5"} vertical={false} />
+                <XAxis dataKey="name" tick={{ fontSize: 11, fill: muted }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: muted }} axisLine={false} tickLine={false} allowDecimals={false} />
+                <Tooltip contentStyle={tip} />
+                <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={22} opacity={0.85} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div style={{ height: 155, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "13px", color: muted }}>No activity recorded yet.</div>
+          )}
         </Card>
       </div>
 
@@ -166,17 +187,21 @@ export default function AnalyticsPage({ theme }: any) {
             <div key={h} style={{ fontSize: "11px", color: muted, fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.06em", padding: "0 8px" }}>{h}</div>
           ))}
         </div>
-        {sessionRows.map((s, i) => (
+        {sessionRows.length ? sessionRows.map((s, i) => (
           <div key={i} style={{ display: "grid", gridTemplateColumns: "80px 60px 70px 1fr 80px 60px 80px", padding: "10px 0", borderBottom: i < sessionRows.length - 1 ? `1px solid ${border}` : "none", alignItems: "center" }}>
             <div style={{ fontSize: "12px", color: text, padding: "0 8px" }}>{s.date}</div>
             <div style={{ fontSize: "12px", color: muted, padding: "0 8px" }}>{s.day}</div>
-            <div style={{ padding: "0 8px" }}><span style={{ fontSize: "11px", color: subjectColor[s.subject] || accent, background: `${subjectColor[s.subject] || accent}15`, padding: "2px 6px", borderRadius: "4px", fontWeight: "500" }}>{s.subject}</span></div>
+            <div style={{ padding: "0 8px" }}><span style={{ fontSize: "11px", color: accent, background: `${accent}15`, padding: "2px 6px", borderRadius: "4px", fontWeight: "500" }}>{s.subject}</span></div>
             <div style={{ fontSize: "12px", color: text, fontWeight: "400", padding: "0 8px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.content}</div>
             <div style={{ fontSize: "12px", color: muted, padding: "0 8px" }}>{s.duration}</div>
             <div style={{ fontSize: "12px", color: "#22c55e", fontWeight: "500", padding: "0 8px" }}>{s.focus}</div>
             <div style={{ padding: "0 8px" }}><span style={{ fontSize: "11px", color: typeColor[s.type] || accent, background: `${typeColor[s.type] || accent}15`, padding: "2px 6px", borderRadius: "4px", fontWeight: "500" }}>{s.type}</span></div>
           </div>
-        ))}
+        )) : (
+          <div style={{ padding: "28px 0", textAlign: "center", fontSize: "12px", color: muted }}>
+            No sessions recorded yet.
+          </div>
+        )}
       </Card>
     </div>
   )

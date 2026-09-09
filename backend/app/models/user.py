@@ -32,6 +32,7 @@ class User(Base):
     notes = relationship("Note", back_populates="user", cascade="all, delete-orphan")
     flashcards = relationship("Flashcard", back_populates="user", cascade="all, delete-orphan")
     quizzes = relationship("Quiz", back_populates="user", cascade="all, delete-orphan")
+    quiz_results = relationship("QuizResult", back_populates="user", cascade="all, delete-orphan")
     quiz_attempts = relationship("QuizAttempt", cascade="all, delete-orphan")
     study_sessions = relationship("StudySession", back_populates="user", cascade="all, delete-orphan")
     learning_stats = relationship("LearningStat", back_populates="user", cascade="all, delete-orphan")

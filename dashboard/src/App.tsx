@@ -1,6 +1,8 @@
 import { useState } from "react"
 import Sidebar from "./components/Sidebar"
 import Topbar from "./components/Topbar"
+import AuthModal from "./components/AuthModal"
+import { getToken } from "./services/apiService"
 import DashboardPage from "./pages/DashboardPage"
 import AnalyticsPage from "./pages/AnalyticsPage"
 import PerformancePage from "./pages/PerformancePage"
@@ -35,6 +37,7 @@ export default function App() {
   const [active, setActive] = useState("Dashboard")
   const [dark, setDark] = useState(true)
   const [voiceModalOpen, setVoiceModalOpen] = useState(false)
+  const [authOpen, setAuthOpen] = useState(false)
 
   const theme: Theme = dark ? {
     dark: true,
@@ -84,7 +87,7 @@ export default function App() {
     <div style={{ display: "flex", height: "100vh", background: theme.bg, transition: "background 0.2s", fontFamily: "Inter, system-ui, sans-serif" }}>
       <Sidebar active={active} setActive={setActive} theme={theme} />
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", borderLeft: `1px solid ${theme.border}` }}>
-        <Topbar page={active} theme={theme} onOpenVoiceModal={() => setVoiceModalOpen(true)} />
+        <Topbar page={active} theme={theme} onOpenVoiceModal={() => setVoiceModalOpen(true)} onOpenAuth={() => setAuthOpen(true)} />
         <main style={{ flex: 1, overflowY: "auto", background: theme.bg }}>
           <div style={{ padding: "24px 28px", minHeight: "100%" }}>
             {pages[active] ?? pages["Dashboard"]}
@@ -98,6 +101,8 @@ export default function App() {
         isOpen={voiceModalOpen}
         onClose={() => setVoiceModalOpen(false)}
       />
+
+      <AuthModal theme={theme} isOpen={authOpen || !getToken()} onClose={() => setAuthOpen(false)} />
     </div>
   )
 }

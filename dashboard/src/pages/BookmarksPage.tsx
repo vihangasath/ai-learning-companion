@@ -1,57 +1,73 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Card from "../components/Card"
-import { categorizeBookmarkText, type SmartBookmark } from "../services/advancedFeaturesService"
+import { notesApi, type Note } from "../services/apiService"
 
-const initialBookmarks: SmartBookmark[] = [
-  { id: "b1", title: "Photosynthesis Definition", url: "https://wikipedia.org/wiki/Photosynthesis", text: "Photosynthesis is defined as the process by which green plants convert light into chemical energy.", category: "Definition", aiLabel: "Core Definition", createdAt: "2 days ago", color: "#14b8a6" },
-  { id: "b2", title: "Newton's Second Law Equation", url: "https://physics.info/motion", text: "Force equals mass times acceleration (F = ma).", category: "Formula", aiLabel: "Math Formula", createdAt: "3 days ago", color: "#3b82f6" },
-  { id: "b3", title: "Derivatives in Machine Learning", url: "https://youtube.com/watch?v=1", text: "Why does gradient descent use the derivative of loss over weights?", category: "Question", aiLabel: "Key Inquiry", createdAt: "4 days ago", color: "#8b5cf6" },
-  { id: "b4", title: "Neural Network Backpropagation", url: "https://arxiv.org/abs/1706.03762", text: "Backpropagation calculates loss gradient with respect to each weight via chain rule.", category: "Concept", aiLabel: "Important Concept", createdAt: "5 days ago", color: "#22c55e" },
-  { id: "b5", title: "K-Means Clustering Example", url: "https://scikit-learn.org", text: "For example, grouping customer purchase data into 5 distinct demographic clusters.", category: "Example", aiLabel: "Practical Example", createdAt: "6 days ago", color: "#f59e0b" },
-]
+const CATEGORY_COLORS: Record<string, string> = {
+  article: "#14b8a6",
+  youtube: "#22c55e",
+  pdf: "#8b5cf6",
+}
 
-const categories = ["All", "Definition", "Formula", "Question", "Concept", "Example"]
+const typeLabel = (type: string) => {
+  const map: Record<string, string> = { article: "Article", youtube: "YouTube", pdf: "PDF" }
+  return map[type] ?? type
+}
 
 export default function BookmarksPage({ theme }: any) {
   const { text, textSec, muted, accent, border, hover, inputBg } = theme
   const [filter, setFilter] = useState("All")
-  const [bookmarks, setBookmarks] = useState<SmartBookmark[]>(initialBookmarks)
-  const [newText, setNewText] = useState("")
-  const [newTitle, setNewTitle] = useState("")
+  const [bookmarks, setBookmarks] = useState<Note[]>([])
+  const [apiLoading, setApiLoading] = useState(true)
 
-  const handleAddBookmark = () => {
-    if (!newText.trim()) return
-    const { category, aiLabel } = categorizeBookmarkText(newText)
-    const newBm: SmartBookmark = {
-      id: `b-${Date.now()}`,
-      title: newTitle.trim() || `Bookmark: ${newText.slice(0, 25)}...`,
-      url: "https://learnflow.ai/resource",
-      text: newText,
-      category,
-      aiLabel,
-      createdAt: "Just now",
-      color: category === "Definition" ? "#14b8a6" : category === "Formula" ? "#3b82f6" : category === "Question" ? "#8b5cf6" : category === "Concept" ? "#22c55e" : "#f59e0b"
+  useEffect(() => {
+    let cancelled = false
+    const load = async () => {
+      setApiLoading(true)
+      try {
+        const result = await notesApi.getAll(0, 100)
+        if (!cancelled) setBookmarks(result.notes ?? [])
+      } catch (_) {
+        // backend unavailable — leave list empty
+      } finally {
+        if (!cancelled) setApiLoading(false)
+      }
     }
-    setBookmarks([newBm, ...bookmarks])
-    setNewText("")
-    setNewTitle("")
-  }
+    load()
+    return () => { cancelled = true }
+  }, [])
+
+  const categories = ["All", ...Array.from(new Set(bookmarks.map(b => b.content_type)))]
+  const shown = filter === "All" ? bookmarks : bookmarks.filter(b => b.content_type === filter)
 
   const handleDelete = (id: string) => {
-    setBookmarks(bookmarks.filter(b => b.id !== id))
+    setBookmarks(prev => prev.filter(b => b.id !== id))
   }
 
-  const shown = filter === "All" ? bookmarks : bookmarks.filter(b => b.category === filter)
+  const formatTime = (d: string) => {
+    try {
+      const dt = new Date(d)
+      const now = new Date()
+      const diffMs = now.getTime() - dt.getTime()
+      const mins = Math.round(diffMs / 60000)
+      if (mins < 60) return `${mins}m ago`
+      const hours = Math.round(mins / 60)
+      if (hours < 24) return `${hours}h ago`
+      const days = Math.round(hours / 24)
+      return `${days}d ago`
+    } catch {
+      return ""
+    }
+  }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px", paddingBottom: "16px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
         <div>
           <h1 style={{ fontSize: "22px", fontWeight: "600", color: text, letterSpacing: "-0.03em", marginBottom: "4px" }}>
-            📌 Smart Bookmarks
+            📌 Saved Notes
           </h1>
           <p style={{ fontSize: "13px", color: textSec }}>
-            AI-categorized bookmarks with intelligent labels (Definitions, Formulas, Questions, Concepts)
+            Your analyzed study content — notes, summaries, and references
           </p>
         </div>
         <div style={{ display: "flex", gap: "4px" }}>
@@ -70,94 +86,64 @@ export default function BookmarksPage({ theme }: any) {
                 fontWeight: filter === cat ? "500" : "400"
               }}
             >
-              {cat}
+              {cat === "All" ? "All" : typeLabel(cat)}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Add New Smart Bookmark Box */}
-      <Card theme={theme} style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "14px" }}>
-        <div style={{ fontSize: "13px", fontWeight: "600", color: text }}>+ Add Smart AI Bookmark</div>
-        <div style={{ display: "flex", gap: "8px" }}>
-          <input
-            value={newTitle}
-            onChange={e => setNewTitle(e.target.value)}
-            placeholder="Title (optional)"
-            style={{
-              width: "200px",
-              padding: "8px 10px",
-              borderRadius: "6px",
-              border: `1px solid ${border}`,
-              background: inputBg,
-              color: text,
-              fontSize: "12px",
-              outline: "none"
-            }}
-          />
-          <input
-            value={newText}
-            onChange={e => setNewText(e.target.value)}
-            placeholder="Paste text snippet (AI will automatically categorize it)..."
-            style={{
-              flex: 1,
-              padding: "8px 10px",
-              borderRadius: "6px",
-              border: `1px solid ${border}`,
-              background: inputBg,
-              color: text,
-              fontSize: "12px",
-              outline: "none"
-            }}
-          />
-          <button
-            onClick={handleAddBookmark}
-            style={{
-              padding: "8px 14px",
-              borderRadius: "6px",
-              border: "none",
-              background: accent,
-              color: "#042f2e",
-              fontWeight: "600",
-              fontSize: "12px",
-              cursor: "pointer"
-            }}
-          >
-            Save & Categorize
-          </button>
+      {!bookmarks.length ? (
+        <Card theme={theme} style={{ padding: "40px 24px", textAlign: "center" }}>
+          <div style={{ fontSize: "28px", marginBottom: "8px" }}>📌</div>
+          <div style={{ fontSize: "14px", fontWeight: "600", color: text, marginBottom: "4px" }}>No saved notes yet</div>
+          <div style={{ fontSize: "12px", color: muted }}>
+            Analyze a YouTube video, article, or PDF in the Content page to generate study notes.
+          </div>
+        </Card>
+      ) : (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "10px" }}>
+          {shown.map(b => {
+            const color = CATEGORY_COLORS[b.content_type] ?? "#a1a1aa"
+            return (
+              <Card key={b.id} theme={theme} style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "14px 16px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0, flex: 1 }}>
+                    <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: color, flexShrink: 0 }} />
+                    <span style={{ color: text, fontSize: "13px", fontWeight: "600", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{b.title || "Untitled Note"}</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
+                    <span style={{ fontSize: "10px", color: color, background: `${color}15`, padding: "2px 7px", borderRadius: "4px", fontWeight: "500" }}>
+                      {typeLabel(b.content_type)}
+                    </span>
+                    <span onClick={() => handleDelete(b.id)} style={{ fontSize: "11px", color: muted, cursor: "pointer", marginLeft: "4px" }}>
+                      ✕
+                    </span>
+                  </div>
+                </div>
+
+                {b.summary && (
+                  <div style={{ fontSize: "12px", color: textSec, background: hover, padding: "8px 10px", borderRadius: "6px", borderLeft: `2px solid ${color}` }}>
+                    {b.summary.slice(0, 200)}
+                  </div>
+                )}
+
+                {b.topics && (
+                  <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
+                    {(Array.isArray(b.topics) ? b.topics : (b.topics as string).split(/[\s,]+/)).filter(Boolean).slice(0, 3).map((t, i) => (
+                      <span key={i} style={{ fontSize: "10px", color: accent, background: `${accent}10`, padding: "2px 6px", borderRadius: "4px" }}>{t}</span>
+                    ))}
+                  </div>
+                )}
+
+                <div style={{ fontSize: "11px", color: muted, display: "flex", justifyContent: "space-between" }}>
+                  <span>{b.content_url ? `URL: ${b.content_url.slice(0, 40)}...` : "Saved note"}</span>
+                  <span>{formatTime(b.created_at)}</span>
+                </div>
+              </Card>
+            )
+          })}
         </div>
-      </Card>
-
-      {/* Bookmarks Grid */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "10px" }}>
-        {shown.map(b => (
-          <Card key={b.id} theme={theme} style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "14px 16px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: b.color, flexShrink: 0 }} />
-                <span style={{ color: text, fontSize: "13px", fontWeight: "600" }}>{b.title}</span>
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                <span style={{ fontSize: "10px", color: b.color, background: `${b.color}15`, padding: "2px 7px", borderRadius: "4px", fontWeight: "500" }}>
-                  {b.aiLabel}
-                </span>
-                <span onClick={() => handleDelete(b.id)} style={{ fontSize: "11px", color: muted, cursor: "pointer", marginLeft: "4px" }}>
-                  ✕
-                </span>
-              </div>
-            </div>
-
-            <div style={{ fontSize: "12px", color: textSec, background: hover, padding: "8px 10px", borderRadius: "6px", borderLeft: `2px solid ${b.color}` }}>
-              &quot;{b.text}&quot;
-            </div>
-
-            <div style={{ fontSize: "11px", color: muted, display: "flex", justifyContent: "space-between" }}>
-              <span>{b.url}</span>
-              <span>{b.createdAt}</span>
-            </div>
-          </Card>
-        ))}
-      </div>
+      )}
     </div>
   )
 }

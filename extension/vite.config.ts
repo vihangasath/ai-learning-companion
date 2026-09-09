@@ -20,10 +20,18 @@ const manifest = defineManifest({
   permissions: [
     'sidePanel',
     'tabs',
-    'storage'
+    'storage',
+    'activeTab'
   ],
   host_permissions: [
-    'http://localhost:8001/*'
+    'http://localhost:8000/*'
+  ],
+  content_scripts: [
+    {
+      matches: ['<all_urls>'],
+      js: ['src/content-scripts/index.ts'],
+      run_at: 'document_idle'
+    }
   ]
 })
 

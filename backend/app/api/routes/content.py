@@ -4,13 +4,19 @@ from sqlalchemy.orm import Session
 from backend.app.core.database import get_db
 from backend.app.schemas.content import ContentAnalyzeRequest
 from backend.app.services.content_service import content_service
+from backend.app.auth.middleware.auth_middleware import get_optional_user
+from backend.app.models.user import User
 
 router = APIRouter()
 
 
 @router.post("/analyze")
-def analyze_content(req: ContentAnalyzeRequest, db: Session = Depends(get_db)):
-    user_id = "default-user-id"
+def analyze_content(
+    req: ContentAnalyzeRequest,
+    db: Session = Depends(get_db),
+    current_user: User | None = Depends(get_optional_user),
+):
+    user_id = current_user.id if current_user else "default-user-id"
 
     result = content_service.process_content(
         db=db,

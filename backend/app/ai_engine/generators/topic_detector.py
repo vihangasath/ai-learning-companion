@@ -3,15 +3,16 @@ import json
 from pathlib import Path
 from typing import Optional
 
+from backend.app.ai_engine.models.llm_config import llm_config, build_chat_model, extract_text
+
 
 class TopicDetector:
     def __init__(self):
-        self.api_key = os.getenv("OPENAI_API_KEY", "")
         prompt_path = Path(__file__).parent.parent / "prompts" / "topic_prompt.txt"
         self.prompt_template = prompt_path.read_text() if prompt_path.exists() else ""
 
     def detect(self, text: str) -> list[dict]:
-        if not self.api_key:
+        if llm_config.active_provider == "mock":
             return self._mock_topics()
 
         try:
@@ -20,26 +21,22 @@ class TopicDetector:
             return self._mock_topics()
 
     def _llm_topics(self, text: str) -> list[dict]:
-        from langchain_openai import ChatOpenAI
-        from langchain.prompts import ChatPromptTemplate
+        from langchain_core.prompts import ChatPromptTemplate
 
-        llm = ChatOpenAI(
-            model=os.getenv("OPENAI_MODEL_NAME", "gpt-4o-mini"),
-            temperature=float(os.getenv("LLM_TEMPERATURE", "0.3")),
-            api_key=self.api_key,
-        )
+        llm = build_chat_model()
         prompt = ChatPromptTemplate.from_template(self.prompt_template)
         chain = prompt | llm
 
         result = chain.invoke({"text": text[:8000]})
-        return json.loads(result.content.strip().strip("```json").strip("```").strip())
+        return json.loads(extract_text(result).strip().strip("```json").strip("```").strip())
 
     def extract_formulas(self, text: str) -> list[dict]:
         try:
             import sys
             sys.path.insert(0, str(Path(__file__).parent.parent.parent))
             from advanced_features.formula_extraction.extractor import FormulaExtractor
-            extractor = FormulaExtractor(use_llm=bool(self.api_key), api_key=self.api_key or None)
+            api_key = llm_config.gemini_api_key or llm_config.openai_api_key
+            extractor = FormulaExtractor(use_llm=bool(api_key), api_key=api_key or None)
             return extractor.extract(text)
         except Exception:
             return self._mock_formulas()

@@ -2,14 +2,35 @@
 // All endpoints point to http://localhost:8000 by default.
 // Pages should import from this file and call these functions.
 
-const BASE_URL = "http://localhost:8000"
+const BASE_URL = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "http://localhost:8000"
+
+// ---------- Auth token handling ----------
+
+const TOKEN_KEY = "learnflow_token"
+
+export function getToken(): string | null {
+  return localStorage.getItem(TOKEN_KEY)
+}
+
+export function setToken(token: string): void {
+  localStorage.setItem(TOKEN_KEY, token)
+}
+
+export function clearToken(): void {
+  localStorage.removeItem(TOKEN_KEY)
+}
+
+function authHeaders(): Record<string, string> {
+  const token = getToken()
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
 
 // ---------- Generic HTTP helpers ----------
 
 async function get<T>(path: string): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`, {
     method: "GET",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...authHeaders() },
   })
   if (!res.ok) throw new Error(`GET ${path} failed: ${res.status}`)
   const json = await res.json()
@@ -19,7 +40,7 @@ async function get<T>(path: string): Promise<T> {
 async function post<T>(path: string, body: unknown): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...authHeaders() },
     body: JSON.stringify(body),
   })
   if (!res.ok) throw new Error(`POST ${path} failed: ${res.status}`)
@@ -30,7 +51,7 @@ async function post<T>(path: string, body: unknown): Promise<T> {
 async function put<T>(path: string, body: unknown): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...authHeaders() },
     body: JSON.stringify(body),
   })
   if (!res.ok) throw new Error(`PUT ${path} failed: ${res.status}`)
@@ -179,14 +200,35 @@ export interface Recommendation {
   match_score?: number
 }
 
+export interface SearchResult {
+  id: string
+  kind: "note" | "flashcard" | "topic"
+  title: string
+  text: string
+  content_id?: string | null
+  score: number
+}
+
+export interface SearchResponse {
+  query: string
+  results: SearchResult[]
+  total: number
+}
+
 // ---------- Auth API ----------
 
 export const authApi = {
   register: (email: string, password: string, name: string) =>
     post<User>("/api/auth/register", { email, password, name }),
 
-  login: (email: string, password: string) =>
-    post<{ access_token: string; token_type: string }>("/api/auth/login", { email, password }),
+  login: async (email: string, password: string) => {
+    const result = await post<{ access_token: string; token_type: string }>("/api/auth/login", {
+      email,
+      password,
+    })
+    setToken(result.access_token)
+    return result
+  },
 
   getMe: () => get<User>("/api/auth/me"),
 }
@@ -266,4 +308,27 @@ export const analyticsApi = {
   getRecent: (limit = 20) => get<RecentActivityItem[]>(`/api/analytics/recent?limit=${limit}`),
   getHeatmap: (year?: number) =>
     get<HeatmapData>(`/api/analytics/heatmap${year ? `?year=${year}` : ""}`),
+}
+
+// ---------- Search API ----------
+
+export const searchApi = {
+  search: (q: string) => get<SearchResponse>(`/api/search?q=${encodeURIComponent(q)}`),
+}
+
+// ---------- Knowledge Graph API ----------
+
+export const knowledgeApi = {
+  getGraph: () =>
+    get<{ nodes: number; edges: number; graph: Record<string, KnowledgeNode> }>("/api/knowledge/graph"),
+}
+
+export interface KnowledgeNode {
+  id: string | number
+  slug: string
+  category: string
+  difficulty: string
+  prerequisites: string[]
+  next_topics: string[]
+  estimated_time: string
 }

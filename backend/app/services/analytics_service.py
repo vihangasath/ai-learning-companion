@@ -223,7 +223,8 @@ class AnalyticsService:
             db.query(LearningStat)
             .filter(
                 LearningStat.user_id == user_id,
-                func.strftime("%Y", LearningStat.date) == str(target_year),
+                LearningStat.date >= date(target_year, 1, 1),
+                LearningStat.date < date(target_year + 1, 1, 1),
             )
             .all()
         )

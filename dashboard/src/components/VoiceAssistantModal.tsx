@@ -1,11 +1,34 @@
 import { useState } from "react"
-import { parseVoiceInput, type VoiceCommandResult } from "../services/advancedFeaturesService"
 import { analyticsApi } from "../services/apiService"
 
 interface VoiceAssistantModalProps {
   theme: any
   isOpen: boolean
   onClose: () => void
+}
+
+export interface VoiceCommandResult {
+  speechText: string
+  intent: "EXPLAIN_AGAIN" | "GENERATE_QUIZ" | "SUMMARIZE_SECTION" | "SEARCH_TOPIC" | "UNKNOWN"
+  confidence: number
+  actionResponse: string
+}
+
+function parseVoiceInput(speechText: string): VoiceCommandResult {
+  const textLower = speechText.toLowerCase()
+  if (textLower.includes("explain") || textLower.includes("again") || textLower.includes("clarify")) {
+    return { speechText, intent: "EXPLAIN_AGAIN", confidence: 0.95, actionResponse: "Simplifying key concepts: Here is a beginner-friendly breakdown of the current lesson." }
+  }
+  if (textLower.includes("quiz") || textLower.includes("test") || textLower.includes("question")) {
+    return { speechText, intent: "GENERATE_QUIZ", confidence: 0.92, actionResponse: "Generating a quick quiz based on your current study session!" }
+  }
+  if (textLower.includes("summarize") || textLower.includes("summary") || textLower.includes("overview")) {
+    return { speechText, intent: "SUMMARIZE_SECTION", confidence: 0.9, actionResponse: "Generating concise section summary highlighting key takeaways." }
+  }
+  if (textLower.includes("search") || textLower.includes("find") || textLower.includes("look up")) {
+    return { speechText, intent: "SEARCH_TOPIC", confidence: 0.88, actionResponse: `Executing semantic search across your study materials for "${speechText}".` }
+  }
+  return { speechText, intent: "UNKNOWN", confidence: 0.6, actionResponse: "I heard your prompt. Try asking: 'Can you explain this again?' or 'Generate a quiz!'" }
 }
 
 export default function VoiceAssistantModal({ theme, isOpen, onClose }: VoiceAssistantModalProps) {

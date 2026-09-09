@@ -1,18 +1,23 @@
 import { useState } from "react"
 import Card from "../components/Card"
-import { extractFormulasFromText, type ExtractedFormula } from "../services/advancedFeaturesService"
-
-const samplePhysicsText = `Einstein stated that energy equals mass times speed of light squared (E = mc^2), while Newton defined force equals mass times acceleration (F = ma). Furthermore, the area of a circle is given by A = pi * r^2 and the Pythagorean theorem states a^2 + b^2 = c^2.`
+import { extractFormulasFromText, type ExtractedFormula } from "./_formula_utils"
 
 export default function FormulaExtractorPage({ theme }: any) {
   const { text, textSec, muted, accent, border, hover, inputBg } = theme
-  const [input, setInput] = useState(samplePhysicsText)
-  const [formulas, setFormulas] = useState<ExtractedFormula[]>(extractFormulasFromText(samplePhysicsText))
+  const [input, setInput] = useState("")
+  const [formulas, setFormulas] = useState<ExtractedFormula[]>([])
+  const [hasExtracted, setHasExtracted] = useState(false)
   const [copiedId, setCopiedId] = useState<string | null>(null)
 
   const handleExtract = () => {
+    if (!input.trim()) {
+      setFormulas([])
+      setHasExtracted(false)
+      return
+    }
     const res = extractFormulasFromText(input)
     setFormulas(res)
+    setHasExtracted(true)
   }
 
   const handleCopy = (f: ExtractedFormula) => {
@@ -28,7 +33,7 @@ export default function FormulaExtractorPage({ theme }: any) {
           📐 Formula Extractor
         </h1>
         <p style={{ fontSize: "13px", color: textSec }}>
-          Detect mathematical, physical, and scientific equations from educational text and convert them to LaTeX
+          Detect mathematical and scientific equations from educational text and convert to LaTeX
         </p>
       </div>
 
@@ -38,7 +43,7 @@ export default function FormulaExtractorPage({ theme }: any) {
           value={input}
           onChange={e => setInput(e.target.value)}
           rows={5}
-          placeholder="Paste lecture transcript, textbook section, or notes..."
+          placeholder="Paste lecture transcript, textbook section, or notes with formulas..."
           style={{
             width: "100%",
             padding: "10px 12px",
@@ -65,62 +70,67 @@ export default function FormulaExtractorPage({ theme }: any) {
               cursor: "pointer"
             }}
           >
-            🔍 Extract Formulas
+            Extract Formulas
           </button>
         </div>
       </Card>
 
-      <div style={{ fontSize: "14px", fontWeight: "600", color: text, marginTop: "8px" }}>
-        Extracted Equations ({formulas.length})
-      </div>
-
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "12px" }}>
-        {formulas.map(f => (
-          <Card key={f.id} theme={theme} style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "16px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: "13px", fontWeight: "600", color: text }}>{f.name}</span>
-              <span style={{ fontSize: "10px", color: accent, background: `${accent}15`, padding: "2px 6px", borderRadius: "4px", fontWeight: "500" }}>
-                LaTeX
-              </span>
+      {hasExtracted ? (
+        <>
+          <div style={{ fontSize: "14px", fontWeight: "600", color: text, marginTop: "8px" }}>
+            Extracted Equations ({formulas.length})
+          </div>
+          {formulas.length ? (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "12px" }}>
+              {formulas.map(f => (
+                <Card key={f.id} theme={theme} style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "16px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontSize: "13px", fontWeight: "600", color: text }}>{f.name}</span>
+                    <span style={{ fontSize: "10px", color: accent, background: `${accent}15`, padding: "2px 6px", borderRadius: "4px", fontWeight: "500" }}>LaTeX</span>
+                  </div>
+                  <div
+                    style={{
+                      padding: "12px",
+                      borderRadius: "8px",
+                      background: hover,
+                      border: `1px solid ${border}`,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      minHeight: "54px"
+                    }}
+                  >
+                    <code style={{ fontSize: "16px", color: text, fontFamily: "serif", letterSpacing: "0.05em" }}>{f.latex}</code>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "11px", color: muted }}>
+                    <span>Match: "{f.rawText}"</span>
+                    <button
+                      onClick={() => handleCopy(f)}
+                      style={{ padding: "4px 8px", borderRadius: "4px", border: `1px solid ${border}`, background: "transparent", color: copiedId === f.id ? accent : textSec, fontSize: "11px", cursor: "pointer" }}
+                    >
+                      {copiedId === f.id ? "✓ Copied" : "Copy LaTeX"}
+                    </button>
+                  </div>
+                </Card>
+              ))}
             </div>
-
-            <div
-              style={{
-                padding: "12px",
-                borderRadius: "8px",
-                background: hover,
-                border: `1px solid ${border}`,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                minHeight: "54px"
-              }}
-            >
-              <code style={{ fontSize: "16px", color: text, fontFamily: "serif", letterSpacing: "0.05em" }}>
-                {f.latex}
-              </code>
-            </div>
-
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "11px", color: muted }}>
-              <span>Match: &quot;{f.rawText}&quot;</span>
-              <button
-                onClick={() => handleCopy(f)}
-                style={{
-                  padding: "4px 8px",
-                  borderRadius: "4px",
-                  border: `1px solid ${border}`,
-                  background: "transparent",
-                  color: copiedId === f.id ? accent : textSec,
-                  fontSize: "11px",
-                  cursor: "pointer"
-                }}
-              >
-                {copiedId === f.id ? "✓ Copied" : "Copy LaTeX"}
-              </button>
-            </div>
-          </Card>
-        ))}
-      </div>
+          ) : (
+            <Card theme={theme} style={{ padding: "28px 24px", textAlign: "center" }}>
+              <div style={{ fontSize: "13px", color: muted }}>
+                No formulas detected. Try text containing equations like F=ma, E=mc², or the quadratic formula.
+              </div>
+            </Card>
+          )}
+        </>
+      ) : (
+        <Card theme={theme} style={{ padding: "40px 24px", textAlign: "center" }}>
+          <div style={{ fontSize: "28px", marginBottom: "8px" }}>📐</div>
+          <div style={{ fontSize: "14px", fontWeight: "600", color: text, marginBottom: "4px" }}>Enter some text to extract formulas</div>
+          <div style={{ fontSize: "12px", color: muted }}>
+            Paste educational text above, then click "Extract Formulas". Runs locally in your browser.
+          </div>
+        </Card>
+      )}
     </div>
   )
 }

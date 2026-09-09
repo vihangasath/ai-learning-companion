@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from backend.app.core.config import settings
 from backend.app.core.database import engine, Base
 import backend.app.models
-from backend.app.api.routes import auth, content, notes, flashcards, quiz, recommendations, analytics, knowledge, memory
+from backend.app.api.routes import auth, content, notes, flashcards, quiz, recommendations, analytics, knowledge, memory, search
 
 app = FastAPI(
     title=settings.app_name,
@@ -15,6 +15,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins_list,
+    allow_origin_regex=r"^(https?://(localhost|127\.0\.0\.1)(:\d+)?|chrome-extension://[a-p]{32})$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -35,6 +36,7 @@ app.include_router(recommendations.router, prefix="/api/recommendations", tags=[
 app.include_router(analytics.router, prefix="/api/analytics", tags=["Analytics"])
 app.include_router(knowledge.router, prefix="/api/knowledge", tags=["Knowledge Graph"])
 app.include_router(memory.router, prefix="/api/memory", tags=["Memory"])
+app.include_router(search.router, prefix="/api/search", tags=["Search"])
 
 
 @app.get("/health")

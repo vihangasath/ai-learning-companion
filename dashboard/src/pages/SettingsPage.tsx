@@ -1,5 +1,6 @@
 ﻿import { useState } from "react"
 import Card from "../components/Card"
+import { useCurrentUser } from "../hooks/useCurrentUser"
 
 function Toggle({ on, onClick, accent }: any) {
   return (
@@ -11,6 +12,7 @@ function Toggle({ on, onClick, accent }: any) {
 
 export default function SettingsPage({ theme }: any) {
   const { text, textSec, muted, accent, border, dark, setDark, hover, inputBg } = theme
+  const { user } = useCurrentUser()
   const [notif, setNotif] = useState({ reminders:true,streak:true,weekly:false,achievements:true })
   const [goal, setGoal] = useState("2 hours")
   const [diff, setDiff] = useState("Intermediate")
@@ -69,9 +71,9 @@ export default function SettingsPage({ theme }: any) {
           </Card>
           <Card theme={theme}>
             <div style={{ fontSize:"11px",fontWeight:"600",color:accent,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:"4px" }}>Account</div>
-            <Row label="Full name" desc="" control={<div style={{ color:text,fontSize:"13px" }}>Kasun Perera</div>}/>
-            <Row label="Email" desc="" control={<div style={{ color:muted,fontSize:"13px" }}>kasun@student.lk</div>}/>
-            <Row label="University" desc="" control={<div style={{ color:muted,fontSize:"13px" }}>Uni of Colombo</div>}/>
+            <Row label="Full name" desc="" control={<div style={{ color:text,fontSize:"13px" }}>{user?.name ?? "—"}</div>}/>
+            <Row label="Email" desc="" control={<div style={{ color:muted,fontSize:"13px" }}>{user?.email ?? "—"}</div>}/>
+            <Row label="University" desc="" control={<div style={{ color:muted,fontSize:"13px" }}>—</div>}/>
             <Row label="Plan" desc="" control={<span style={{ fontSize:"11px",color:accent,background:`${accent}15`,padding:"2px 8px",borderRadius:"4px",fontWeight:"500" }}>Free</span>}/>
           </Card>
         </div>

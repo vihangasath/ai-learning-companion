@@ -42,8 +42,13 @@ function NavIcon({ d }: { d: string }) {
   )
 }
 
+import { useCurrentUser, initialsFor } from "../hooks/useCurrentUser"
+
 export default function Sidebar({ active, setActive, theme }: any) {
   const { dark, border, text, textSec, muted, accent, hover } = theme
+  const { user } = useCurrentUser()
+  const displayName = user?.name?.trim() || "Learner"
+  const roleLabel = user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : "Student"
 
   const sidebarBg = dark ? "#111113" : "#ffffff"
 
@@ -92,10 +97,10 @@ export default function Sidebar({ active, setActive, theme }: any) {
         </button>
         <button onClick={() => setActive("Profile")}
           style={{ width: "100%", display: "flex", alignItems: "center", gap: "9px", padding: "8px", borderRadius: "8px", border: `1px solid ${border}`, cursor: "pointer", background: hover, textAlign: "left" }}>
-          <div style={{ width: "30px", height: "30px", borderRadius: "50%", background: `linear-gradient(135deg, ${accent}, #3b82f6)`, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: "11px", fontWeight: "600", flexShrink: 0 }}>KP</div>
+          <div style={{ width: "30px", height: "30px", borderRadius: "50%", background: `linear-gradient(135deg, ${accent}, #3b82f6)`, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: "11px", fontWeight: "600", flexShrink: 0 }}>{initialsFor(user?.name)}</div>
           <div>
-            <div style={{ fontSize: "13px", fontWeight: "500", color: text }}>Kasun Perera</div>
-            <div style={{ fontSize: "11px", color: muted }}>Student</div>
+            <div style={{ fontSize: "13px", fontWeight: "500", color: text }}>{displayName}</div>
+            <div style={{ fontSize: "11px", color: muted }}>{roleLabel}</div>
           </div>
         </button>
       </div>

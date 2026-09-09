@@ -21,15 +21,15 @@ def test(name, fn):
 
 def suite_ai_engine():
     print("\n=== AI Engine ===")
-    from ai_engine.processors.text_cleaner import text_cleaner
-    from ai_engine.processors.chunker import text_chunker
-    from ai_engine.processors.embedding_generator import embedding_generator
-    from ai_engine.generators.summary_generator import summary_generator
-    from ai_engine.generators.note_generator import note_generator
-    from ai_engine.generators.flashcard_generator import flashcard_generator
-    from ai_engine.generators.quiz_generator import quiz_generator
-    from ai_engine.generators.topic_detector import topic_detector
-    from ai_engine.pipelines.content_pipeline import ContentPipeline
+    from backend.app.ai_engine.processors.text_cleaner import text_cleaner
+    from backend.app.ai_engine.processors.chunker import text_chunker
+    from backend.app.ai_engine.processors.embedding_generator import embedding_generator
+    from backend.app.ai_engine.generators.summary_generator import summary_generator
+    from backend.app.ai_engine.generators.note_generator import note_generator
+    from backend.app.ai_engine.generators.flashcard_generator import flashcard_generator
+    from backend.app.ai_engine.generators.quiz_generator import quiz_generator
+    from backend.app.ai_engine.generators.topic_detector import topic_detector
+    from backend.app.ai_engine.pipelines.content_pipeline import ContentPipeline
 
     SAMPLE = "Machine learning is a subset of artificial intelligence."
 
@@ -102,15 +102,27 @@ def suite_backend():
         "email": "test@example.com", "password": "test12345", "name": "Test"
     })))
 
+    test("login", lambda: (
+        lambda r: (None if r.status_code == 200 else 1/0)
+    )(client.post("/api/auth/login", json={
+        "email": "test@example.com", "password": "test12345"
+    })))
+
+    login_res = client.post("/api/auth/login", json={
+        "email": "test@example.com", "password": "test12345"
+    })
+    token = login_res.json()["data"]["access_token"]
+    auth_headers = {"Authorization": f"Bearer {token}"}
+
     test("analyze_content", lambda: (
         lambda r: (None if r.status_code == 200 and "content_id" in r.json()["data"] else 1/0)
     )(client.post("/api/content/analyze", json={
         "url": "https://youtube.com/watch?v=test", "content_type": "youtube"
-    })))
+    }, headers=auth_headers)))
 
     test("get_notes", lambda: (
         lambda r: (None if r.status_code == 200 else 1/0)
-    )(client.get("/api/notes/user/all")))
+    )(client.get("/api/notes/user/all", headers=auth_headers)))
 
     test("recommendations", lambda: (
         lambda r: (None if r.status_code == 200 else 1/0)
