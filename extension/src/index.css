@@ -27,6 +27,23 @@ body {
   gap: 10px;
 }
 
+.status, .source-card, .empty-state {
+  background: #111114;
+  border: 1px solid #1f1f23;
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.status { color: #a1a1aa; }
+.source-label, .success { color: #2dd4bf; font-size: 10px; font-weight: 700; letter-spacing: .07em; }
+.source-title { color: #f4f4f5; font-size: 13px; font-weight: 600; line-height: 1.4; margin: 5px 0; }
+.source-url { color: #71717a; font-size: 11px; }
+.btn-link { background: transparent; border: none; color: #a1a1aa; font-size: 11px; cursor: pointer; margin-top: -7px; padding: 3px; text-decoration: underline; }
+.empty-state { text-align: center; color: #a1a1aa; line-height: 1.5; }
+.empty-state p { font-size: 12px; margin: 6px 0 10px; }
+.empty-icon { color: #2dd4bf; font-size: 24px; margin-bottom: 6px; }
+.success { margin: 2px 0 -2px; }
+
 .logo-mark {
   width: 32px;
   height: 32px;

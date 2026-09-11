@@ -17,6 +17,7 @@ import MindMapsPage from "./pages/MindMapsPage"
 import FormulaExtractorPage from "./pages/FormulaExtractorPage"
 import ResearchSummarizerPage from "./pages/ResearchSummarizerPage"
 import VoiceAssistantModal from "./components/VoiceAssistantModal"
+import StudyPage from "./pages/StudyPage"
 
 export type Theme = {
   dark: boolean
@@ -68,7 +69,8 @@ export default function App() {
   }
 
   const pages: Record<string, React.ReactNode> = {
-    Dashboard: <DashboardPage theme={theme} />,
+    Dashboard: <DashboardPage theme={theme} onNavigate={setActive} />,
+    Study: <StudyPage theme={theme} onComplete={setActive} />,
     Analytics: <AnalyticsPage theme={theme} />,
     Performance: <PerformancePage theme={theme} />,
     Flashcards: <FlashcardsPage theme={theme} />,

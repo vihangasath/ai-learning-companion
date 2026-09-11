@@ -32,9 +32,7 @@ class TopicDetector:
 
     def extract_formulas(self, text: str) -> list[dict]:
         try:
-            import sys
-            sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-            from advanced_features.formula_extraction.extractor import FormulaExtractor
+            from backend.app.advanced_features.formula_extraction.extractor import FormulaExtractor
             api_key = llm_config.gemini_api_key or llm_config.openai_api_key
             extractor = FormulaExtractor(use_llm=bool(api_key), api_key=api_key or None)
             return extractor.extract(text)

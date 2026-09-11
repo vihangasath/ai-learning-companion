@@ -15,7 +15,7 @@ const EVENT_TAG_MAP: Record<string, { tag: string; color: string }> = {
   session_start: { tag: "Session", color: "#f59e0b" },
 }
 
-export default function DashboardPage({ theme }: any) {
+export default function DashboardPage({ theme, onNavigate }: any) {
   const { dark, text, textSec, muted, accent, border, card, hover } = theme
   const { user } = useCurrentUser()
 
@@ -103,6 +103,23 @@ export default function DashboardPage({ theme }: any) {
     subject: n.content_type,
     color: ["#14b8a6", "#3b82f6", "#8b5cf6", "#22c55e", "#f59e0b", "#ec4899", "#06b6d4", "#a855f7"][i % 8],
   }))
+
+  const isNewLearner = !apiLoading && notes.length === 0 && activityItems.length === 0
+  if (isNewLearner) return (
+    <div style={{ maxWidth: "760px", margin: "28px auto", display: "flex", flexDirection: "column", gap: "18px" }}>
+      <div>
+        <div style={{ fontSize: "12px", fontWeight: "700", color: accent, letterSpacing: "0.08em" }}>WELCOME TO LEARNFLOW</div>
+        <h1 style={{ fontSize: "28px", letterSpacing: "-0.04em", color: text, margin: "5px 0" }}>Turn study material into a plan.</h1>
+        <p style={{ fontSize: "14px", color: textSec, margin: 0 }}>Start with one piece of content. We’ll create notes, flashcards, and a quiz automatically.</p>
+      </div>
+      <Card theme={theme} style={{ padding: "22px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "36px 1fr", gap: "12px", alignItems: "start" }}>
+          {[['1', 'Add study material', 'Paste a lecture transcript, notes, or an article.'], ['2', 'Get your study kit', 'Receive a summary, flashcards, and quiz.'], ['3', 'Review and improve', 'Practice what you learned and watch your progress grow.']].map(([number, title, description]) => <div key={number} style={{ display: "contents" }}><div style={{ width: "28px", height: "28px", borderRadius: "50%", background: number === '1' ? accent : hover, color: number === '1' ? '#042f2e' : muted, display: "grid", placeItems: "center", fontSize: "12px", fontWeight: "700" }}>{number}</div><div style={{ paddingBottom: "14px" }}><div style={{ color: text, fontSize: "14px", fontWeight: "650" }}>{title}</div><div style={{ color: muted, fontSize: "12px", marginTop: "3px" }}>{description}</div></div></div>)}
+        </div>
+        <button onClick={() => onNavigate("Study")} style={{ padding: "10px 16px", borderRadius: "8px", border: "none", background: accent, color: "#042f2e", fontWeight: "700", cursor: "pointer", fontSize: "13px" }}>Start studying →</button>
+      </Card>
+    </div>
+  )
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "14px", paddingBottom: "16px" }}>

@@ -1,140 +1,42 @@
-import { useState } from 'react'
+import { useEffect, useState } from "react"
 
-const API_BASE = 'http://localhost:8000'
+const API_BASE = "http://localhost:8000"
+interface StudyContent { url: string; title: string; text: string; transcript: string; contentType: "youtube" | "article"; isVideo: boolean }
+interface AnalysisResult { title: string; summary: string; flashcards: { question: string; answer: string }[]; quiz: { question: string; options: string[]; correct_answer: string; explanation?: string }[] }
 
-interface PageData {
-  url: string
-  title: string
-  text: string
-}
-
-interface AnalysisResult {
-  content_id: string
-  title: string
-  summary: string
-  detailed_notes: string
-  flashcards: { question: string; answer: string; difficulty: string }[]
-  quiz: { question: string; options: string[]; correct_answer: string; explanation?: string }[]
-  topics: { topic: string; confidence: number }[]
-}
-
-async function getActivePage(): Promise<PageData> {
+async function getActiveContent(): Promise<StudyContent> {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
-  if (!tab?.id) throw new Error('No active tab found')
-  const res = await chrome.tabs.sendMessage(tab.id, { type: 'GET_PAGE_TEXT' })
-  if (!res?.text) throw new Error('Could not read page content. Try a normal (non-Chrome) page.')
-  return res as PageData
+  if (!tab?.id) throw new Error("No active tab found")
+  const result = await chrome.tabs.sendMessage(tab.id, { type: "GET_STUDY_CONTENT" })
+  if (!result?.url) throw new Error("Open a YouTube video or an article, then try again.")
+  return result as StudyContent
 }
 
-function App() {
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [page, setPage] = useState<PageData | null>(null)
+export default function App() {
+  const [content, setContent] = useState<StudyContent | null>(null)
   const [result, setResult] = useState<AnalysisResult | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [analyzing, setAnalyzing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [showCards, setShowCards] = useState(false)
-  const [quizAnswers, setQuizAnswers] = useState<Record<string, string>>({})
-
+  const refreshContent = async () => {
+    setLoading(true); setError(null); setResult(null)
+    try { setContent(await getActiveContent()) } catch (err) { setContent(null); setError(err instanceof Error ? err.message : "Could not read this page.") } finally { setLoading(false) }
+  }
+  useEffect(() => { void refreshContent() }, [])
   const analyze = async () => {
-    setError(null)
-    setLoading(true)
+    if (!content) return
+    setAnalyzing(true); setError(null)
     try {
-      const p = await getActivePage()
-      setPage(p)
-      const res = await fetch(`${API_BASE}/api/content/analyze`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: p.url, content_type: 'article', raw_text: p.text }),
-      })
-      if (!res.ok) throw new Error(`Backend error: ${res.status}`)
-      const json = await res.json()
-      setResult(json.data)
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Unknown error')
-    } finally {
-      setLoading(false)
-    }
+      const response = await fetch(`${API_BASE}/api/content/analyze`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url: content.url, content_type: content.contentType, raw_text: content.isVideo && !content.transcript ? undefined : content.text, transcript: content.transcript || undefined }) })
+      if (!response.ok) throw new Error(`The learning service returned ${response.status}.`)
+      const json = await response.json(); setResult(json.data as AnalysisResult)
+    } catch (err) { setError(err instanceof Error ? err.message : "Could not create a study kit.") } finally { setAnalyzing(false) }
   }
-
-  const quizScore = () => {
-    if (!result) return null
-    const qs = result.quiz
-    const correct = qs.filter((q) => quizAnswers[q.question] === q.correct_answer).length
-    return `${correct}/${qs.length}`
-  }
-
-  return (
-    <div className="panel">
-      <header className="panel-header">
-        <div className="logo-mark">LF</div>
-        <div>
-          <div className="panel-title">LearnFlow AI</div>
-          <div className="panel-sub">Learning companion</div>
-        </div>
-      </header>
-
-      <button className="btn-primary" onClick={analyze} disabled={loading}>
-        {loading ? 'Analyzing…' : 'Analyze this page'}
-      </button>
-
-      {error && <div className="error">{error}</div>}
-
-      {page && !result && !loading && (
-        <div className="muted-text" style={{ wordBreak: 'break-all' }}>
-          {page.title}
-        </div>
-      )}
-
-      {result && (
-        <div className="results">
-          <div className="card">
-            <div className="section-title">{result.title}</div>
-            <div className="summary">{result.summary}</div>
-          </div>
-
-          <div className="card">
-            <div className="section-title">
-              Flashcards <span className="badge">{result.flashcards.length}</span>
-            </div>
-            <button className="btn-ghost" onClick={() => setShowCards(!showCards)}>
-              {showCards ? 'Hide' : 'Show'} cards
-            </button>
-            {showCards &&
-              result.flashcards.map((c, i) => (
-                <details key={i} className="flashcard">
-                  <summary>{c.question}</summary>
-                  <div className="answer">{c.answer}</div>
-                </details>
-              ))}
-          </div>
-
-          <div className="card">
-            <div className="section-title">
-              Quiz <span className="badge">{result.quiz.length}</span>
-              {quizScore() != null && <span className="score">{quizScore()} correct</span>}
-            </div>
-            {result.quiz.map((q, i) => (
-              <div key={i} className="quiz-item">
-                <div className="quiz-q">{q.question}</div>
-                <div className="quiz-options">
-                  {q.options.map((opt) => (
-                    <label key={opt} className="quiz-opt">
-                      <input
-                        type="radio"
-                        name={`q-${i}`}
-                        checked={quizAnswers[q.question] === opt}
-                        onChange={() => setQuizAnswers({ ...quizAnswers, [q.question]: opt })}
-                      />
-                      {opt}
-                    </label>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  )
+  return <main className="panel">
+    <header className="panel-header"><div className="logo-mark">LF</div><div><div className="panel-title">LearnFlow AI</div><div className="panel-sub">Your study companion</div></div></header>
+    {loading ? <div className="status">Checking the current page…</div> : content ? <><section className="source-card"><div className="source-label">{content.isVideo ? "VIDEO READY" : "PAGE READY"}</div><div className="source-title">{content.title}</div><div className="source-url">{content.isVideo ? "YouTube video detected" : "Article detected"}</div></section><button className="btn-primary" onClick={analyze} disabled={analyzing}>{analyzing ? "Creating your study kit…" : content.isVideo ? "Create study kit for this video" : "Create study kit for this page"}</button><button className="btn-link" onClick={() => void refreshContent()}>Use the current page instead</button></> : <section className="empty-state"><div className="empty-icon">▶</div><div className="section-title">Open a video or article to begin</div><p>LearnFlow will automatically detect it when you open this panel.</p><button className="btn-ghost" onClick={() => void refreshContent()}>Try again</button></section>}
+    {error && <div className="error">{error}</div>}
+    {result && <section className="results"><div className="success">STUDY KIT READY</div><div className="card"><div className="section-title">{result.title}</div><div className="summary">{result.summary}</div></div><div className="card"><div className="section-title">Flashcards <span className="badge">{result.flashcards.length}</span></div><button className="btn-ghost" onClick={() => setShowCards(value => !value)}>{showCards ? "Hide flashcards" : "Review flashcards"}</button>{showCards && result.flashcards.map((card, index) => <details key={index} className="flashcard"><summary>{card.question}</summary><div className="answer">{card.answer}</div></details>)}</div><div className="card"><div className="section-title">Quick quiz <span className="badge">{result.quiz.length} questions</span></div>{result.quiz.map((question, index) => <details key={index} className="flashcard"><summary>{index + 1}. {question.question}</summary><div className="answer">Answer: {question.correct_answer}{question.explanation ? ` — ${question.explanation}` : ""}</div></details>)}</div></section>}
+  </main>
 }
-
-export default App

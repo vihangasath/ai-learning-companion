@@ -1,32 +1,47 @@
-# React + TypeScript + Vite
+# LearnFlow AI — Chrome Extension
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+A Chrome side-panel extension that detects YouTube videos and articles, then generates AI-powered study kits (summaries, flashcards, and quizzes) via the LearnFlow backend.
 
-Currently, two official plugins are available:
+## Tech Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **React 19** + **TypeScript**
+- **Vite** with [CRXJS](https://crxjs.dev/) for Chrome Extension bundling
+- **Manifest V3** (service worker + content script + side panel)
 
-## React Compiler
+## Architecture
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+| Component | File | Purpose |
+|---|---|---|
+| Side Panel UI | `src/App.tsx` | Main React app rendered in Chrome's side panel |
+| Background | `src/background/service-worker.ts` | Registers side panel behavior on toolbar click |
+| Content Script | `src/content-scripts/content.ts` | Extracts page text, title, and YouTube transcripts |
 
-## Expanding the Oxlint configuration
+## Development
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+```bash
+# Install dependencies
+npm install
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+# Dev mode (with HMR via CRXJS)
+npm run dev
+
+# Production build
+npm run build
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+## Loading in Chrome
+
+1. Run `npm run build` to generate the `dist/` folder
+2. Open `chrome://extensions/`
+3. Enable **Developer mode**
+4. Click **Load unpacked** → select the `dist/` folder
+5. Click the LearnFlow AI icon in the toolbar to open the side panel
+
+## API Connection
+
+The extension communicates with the backend at `http://localhost:8000`. Ensure the backend is running before using the extension:
+
+```bash
+# From the project root
+PYTHONPATH=. .venv312/bin/python run.py
+```
