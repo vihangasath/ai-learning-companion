@@ -2,7 +2,7 @@
 
 > AI-Powered Personalized Learning Ecosystem
 
-LearnFlow AI is an intelligent browser extension and learning platform that transforms passive educational content consumption into an active, personalized, and AI-assisted learning experience.
+LearnFlow AI is an intelligent browser extension and learning platform that transforms passive educational content consumption into an active, personalized, and AI-assisted learning experience. It detects YouTube videos and articles, then generates AI-powered study kits — summaries, flashcards, quizzes, and more.
 
 ---
 
@@ -11,94 +11,74 @@ LearnFlow AI is an intelligent browser extension and learning platform that tran
 ```
 LearnFlow AI/
 │
-├── docs/                          # Project documentation
-│
-├── extension/                     # 🔵 Browser Extension (Member 1)
-│   ├── public/                    # Static assets & manifest.json
+├── extension/                         # Chrome Extension (Side Panel)
 │   ├── src/
-│   │   ├── components/            # React UI components
-│   │   ├── content-scripts/       # Content scripts for page interaction
-│   │   ├── background/            # Service worker / background scripts
-│   │   ├── popup/                 # Extension popup interface
-│   │   ├── sidepanel/             # AI Side Panel UI
-│   │   ├── hooks/                 # Custom React hooks
-│   │   ├── utils/                 # Utility functions
-│   │   ├── styles/                # CSS / Tailwind styles
-│   │   └── types/                 # TypeScript type definitions
-│   └── tests/                     # Extension tests
+│   │   ├── background/               # Service worker (side panel registration)
+│   │   ├── content-scripts/           # Page text & transcript extraction
+│   │   ├── App.tsx                    # React side panel UI
+│   │   └── main.tsx                   # Entry point
+│   ├── public/icons/                  # Extension icons (16–128px)
+│   ├── vite.config.ts                 # CRXJS manifest + Vite config
+│   └── package.json
 │
-├── dashboard/                     # 🔵 Learning Dashboard (Member 1)
-│   ├── public/                    # Static assets
+├── dashboard/                         # Learning Dashboard (Web App)
 │   ├── src/
-│   │   ├── components/            # Dashboard React components
-│   │   ├── pages/                 # Dashboard pages/routes
-│   │   ├── hooks/                 # Custom React hooks
-│   │   ├── utils/                 # Utility functions
-│   │   ├── styles/                # CSS / Tailwind styles
-│   │   └── types/                 # TypeScript type definitions
-│   └── tests/                     # Dashboard tests
+│   │   ├── components/                # Reusable UI components
+│   │   ├── pages/                     # Dashboard pages (Analytics, Quizzes, etc.)
+│   │   ├── hooks/                     # Custom React hooks
+│   │   └── services/                  # API client
+│   ├── vite.config.ts
+│   └── package.json
 │
-├── backend/                       # 🟢 Backend API (Member 2)
+├── backend/                           # Python Backend (FastAPI)
 │   ├── app/
-│   │   ├── api/
-│   │   │   └── routes/            # API route handlers
-│   │   ├── core/                  # App config, security, settings
-│   │   ├── models/                # SQLAlchemy / DB models
-│   │   ├── schemas/               # Pydantic schemas
-│   │   ├── services/              # Business logic services
-│   │   └── utils/                 # Utility functions
-│   ├── tests/                     # Backend tests
-│   └── requirements.txt           # Python dependencies
+│   │   ├── main.py                    # FastAPI application entry
+│   │   ├── core/                      # Config, database engine, security
+│   │   ├── api/routes/                # REST API endpoints
+│   │   ├── models/                    # SQLAlchemy ORM models
+│   │   ├── schemas/                   # Pydantic request/response schemas
+│   │   ├── services/                  # Business logic layer
+│   │   ├── auth/                      # JWT authentication & middleware
+│   │   ├── database/                  # DB connection, seeds, vector-db client
+│   │   ├── recommendation/            # Knowledge graph & recommendation engine
+│   │   ├── shared/                    # Constants, types, utility helpers
+│   │   ├── ai_engine/                 # AI/LLM processing engine
+│   │   │   ├── generators/            # Summary, notes, flashcard, quiz generators
+│   │   │   ├── pipelines/             # Content processing pipelines
+│   │   │   ├── processors/            # Text cleaning, chunking, embeddings
+│   │   │   ├── models/                # LLM & embedding configuration
+│   │   │   └── prompts/               # LLM prompt templates
+│   │   ├── analytics/                 # Analytics & learning metrics
+│   │   │   ├── collectors/            # Event collection modules
+│   │   │   ├── processors/            # Data processing pipelines
+│   │   │   ├── metrics/               # Metric calculation functions
+│   │   │   └── visualizations/        # Chart data formatters
+│   │   └── advanced_features/         # Extended capabilities
+│   │       ├── formula_extraction/    # LaTeX formula detection & extraction
+│   │       ├── semantic_search/       # ChromaDB-backed vector search
+│   │       ├── mind_maps/             # Mind map generation & layout
+│   │       ├── smart_bookmarks/       # Auto-categorized bookmarks
+│   │       ├── research_summarizer/   # Academic paper summarization
+│   │       └── voice_interaction/     # Voice command parsing
+│   └── tests/                         # Backend integration tests
 │
-├── ai-engine/                     # 🟢 AI Processing Engine (Member 2)
-│   ├── pipelines/                 # AI processing pipelines
-│   ├── models/                    # ML model configs & wrappers
-│   ├── prompts/                   # LLM prompt templates
-│   ├── processors/                # Text processors (chunking, cleaning)
-│   ├── generators/                # Content generators (notes, quiz, flashcards)
-│   ├── utils/                     # AI utility functions
-│   └── tests/                     # AI engine tests
+├── scripts/                           # Utility scripts
+│   ├── check_neon.py                  # PostgreSQL/Neon connection tester
+│   └── demo.py                        # Member 4 feature demo runner
 │
-├── database/                      # 🟡 Database & Knowledge System (Member 3)
-│   ├── migrations/                # Database migration files
-│   ├── schemas/                   # SQL schema definitions
-│   ├── seeds/                     # Seed data for development
-│   ├── scripts/                   # DB utility scripts
-│   └── vector-db/                 # Vector database configuration
+├── docs/                              # Documentation
+│   ├── ARCHITECTURE.md                # System architecture overview
+│   ├── ADVANCED_FEATURES.md           # Advanced features specification
+│   ├── ANALYTICS_OVERVIEW.md          # Analytics module overview
+│   ├── ANALYTICS_DASHBOARD_UI.md      # Dashboard UI wireframes
+│   ├── PRODUCTIVITY_TRACKING_SYSTEM.md# Focus & streak algorithms
+│   ├── FUTURE_SCOPE.md                # Roadmap
+│   └── guides/                        # Team member work guides
 │
-├── auth/                          # 🟡 Authentication Service (Member 3)
-│   ├── providers/                 # Auth providers (JWT, OAuth, Firebase)
-│   ├── middleware/                 # Auth middleware
-│   ├── utils/                     # Auth utility functions
-│   └── tests/                     # Auth tests
-│
-├── recommendation/                # 🟡 Recommendation Engine (Member 3)
-│   ├── engine/                    # Recommendation algorithms
-│   ├── models/                    # Recommendation models
-│   ├── utils/                     # Utility functions
-│   └── tests/                     # Recommendation tests
-│
-├── analytics/                     # 🔴 Analytics Engine (Member 4)
-│   ├── collectors/                # Event collection modules
-│   ├── processors/                # Analytics data processors
-│   ├── metrics/                   # Metric calculation modules
-│   ├── visualizations/            # Chart components & configs
-│   ├── utils/                     # Utility functions
-│   └── tests/                     # Analytics tests
-│
-├── advanced-features/             # 🔴 Advanced Features (Member 4)
-│   ├── formula-extraction/        # Formula detection & extraction
-│   ├── semantic-search/           # Semantic search system
-│   ├── mind-maps/                 # Mind map generation
-│   ├── smart-bookmarks/           # Smart bookmarking system
-│   ├── research-summarizer/       # Research paper summarization
-│   ├── voice-interaction/         # Voice command features
-│   └── tests/                     # Advanced features tests
-│
-└── shared/                        # 🔗 Shared utilities (All members)
-    ├── constants/                 # Shared constants
-    ├── types/                     # Shared type definitions
-    └── utils/                     # Shared utility functions
+├── .env.example                       # Environment variable template
+├── requirements.txt                   # Python dependencies
+├── run.py                             # Backend server launcher
+└── run_tests.py                       # Test suite runner
 ```
 
 ---
@@ -108,9 +88,9 @@ LearnFlow AI/
 | Member | Area | Directories |
 |--------|------|-------------|
 | **Member 1** | Frontend & Browser Extension | `extension/`, `dashboard/` |
-| **Member 2** | Backend & AI Engine | `backend/`, `ai-engine/` |
-| **Member 3** | Database & Knowledge System | `database/`, `auth/`, `recommendation/` |
-| **Member 4** | Analytics & Advanced Features | `analytics/`, `advanced-features/` |
+| **Member 2** | Backend & AI Engine | `backend/app/main.py`, `backend/app/api/`, `backend/app/ai_engine/` |
+| **Member 3** | Database & Knowledge System | `backend/app/database/`, `backend/app/auth/`, `backend/app/recommendation/` |
+| **Member 4** | Analytics & Advanced Features | `backend/app/analytics/`, `backend/app/advanced_features/` |
 
 ---
 
@@ -118,20 +98,86 @@ LearnFlow AI/
 
 | Layer | Technologies |
 |-------|-------------|
-| **Extension** | React, TypeScript, Tailwind CSS, Chrome APIs |
-| **Dashboard** | React, Tailwind CSS, Recharts, Framer Motion |
-| **Backend** | Python, FastAPI |
-| **AI Engine** | OpenAI API, LangChain, Whisper |
-| **Database** | PostgreSQL, ChromaDB/Pinecone |
-| **Auth** | JWT, OAuth, Firebase/Auth0 |
+| **Extension** | React 19, TypeScript, CRXJS, Chrome MV3 APIs |
+| **Dashboard** | React 19, TypeScript, Tailwind CSS, Recharts |
+| **Backend** | Python, FastAPI, Uvicorn |
+| **AI Engine** | Gemini / OpenAI, LangChain, tiktoken |
+| **Database** | SQLite (dev) / PostgreSQL (prod), ChromaDB |
+| **Auth** | JWT (python-jose), bcrypt |
 
 ---
 
 ## 🚀 Getting Started
 
-1. Clone the repository
-2. Navigate to your team's directory
-3. Follow the README in your specific folder for setup instructions
+### Prerequisites
+
+- Python 3.12+
+- Node.js 18+
+- A Gemini or OpenAI API key
+
+### Setup
+
+```bash
+# 1. Clone the repository
+git clone <repo-url>
+cd ai-learning-companion
+
+# 2. Create a virtual environment and install dependencies
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+
+# 3. Configure environment variables
+cp .env.example .env
+# Edit .env and add your GEMINI_API_KEY or OPENAI_API_KEY
+
+# 4. Start the backend
+python run.py
+# Backend runs at http://localhost:8000
+# API docs at http://localhost:8000/docs
+
+# 5. Build and load the Chrome extension
+cd extension
+npm install
+npm run build
+# Load extension/dist/ as an unpacked extension in chrome://extensions/
+
+# 6. (Optional) Run the learning dashboard
+cd dashboard
+npm install
+npm run dev
+# Dashboard runs at http://localhost:5173
+```
+
+### Running Tests
+
+```bash
+# Run the full test suite
+PYTHONPATH=. python run_tests.py
+
+# Run the Member 4 feature demo
+PYTHONPATH=. python scripts/demo.py
+```
+
+---
+
+## 📡 API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/health` | Health check |
+| `POST` | `/api/auth/register` | Register a new user |
+| `POST` | `/api/auth/login` | Login and get JWT token |
+| `GET` | `/api/auth/me` | Get current user |
+| `POST` | `/api/content/analyze` | Analyze content and generate study kit |
+| `GET` | `/api/notes/user/all` | Get all user notes |
+| `GET` | `/api/flashcards/user/all` | Get all user flashcards |
+| `GET` | `/api/quiz/user/all` | Get all user quizzes |
+| `POST` | `/api/quiz/submit` | Submit quiz answers |
+| `GET` | `/api/recommendations` | Get personalized recommendations |
+| `GET` | `/api/knowledge/graph` | Get knowledge graph |
+| `GET` | `/api/analytics/study-time` | Get study time analytics |
+| `GET` | `/api/search` | Search across notes, flashcards, topics |
 
 ---
 
@@ -139,7 +185,7 @@ LearnFlow AI/
 
 - [Architecture](docs/ARCHITECTURE.md)
 - [Advanced Features](docs/ADVANCED_FEATURES.md)
-- [Analytics Dashboard UI](docs/ANALYTICS_DASHBOARD_UI.md)
 - [Analytics Overview](docs/ANALYTICS_OVERVIEW.md)
+- [Analytics Dashboard UI](docs/ANALYTICS_DASHBOARD_UI.md)
 - [Productivity Tracking](docs/PRODUCTIVITY_TRACKING_SYSTEM.md)
 - [Future Scope](docs/FUTURE_SCOPE.md)
