@@ -3,6 +3,7 @@ node_modules/
 __pycache__/
 *.pyc
 .venv/
+.venv*/
 venv/
 env/
 
@@ -37,3 +38,10 @@ extension/dist/
 # Database
 *.db
 *.sqlite3
+
+# Vector DB / Caches
+chroma_data/
+.uv-cache/
+
+# OS
+Thumbs.db
